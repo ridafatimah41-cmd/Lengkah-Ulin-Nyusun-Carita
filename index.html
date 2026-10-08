@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LUNCAT - Lengkah Ulin Nyusun Carita</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap');
-
         body {
             font-family: 'Nunito', sans-serif;
-            background-color: #e0f2fe;
-            background-image: radial-gradient(#bae6fd 2px, transparent 2px);
-            background-size: 30px 30px;
+            background-color: #d8f5fa; /* Warna biru muda pastel sesuai gambar */
             user-select: none;
             overflow-x: hidden;
         }
@@ -21,265 +18,265 @@
             font-family: 'Fredoka', sans-serif;
         }
 
-        .board-container {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 4px;
-            width: 100%;
-            max-width: 600px;
-            background: #ffffff;
+        /* Papan Permainan */
+        .board-wrapper {
+            background-color: #ff8fb0; /* Border pink tebal */
             padding: 8px;
             border-radius: 1.5rem;
-            border: 6px solid #fcd34d;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            background-color: white;
+            padding: 6px;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        /* Kotak dalam Papan */
         .board-cell {
             aspect-ratio: 1 / 1;
-            border-radius: 0.75rem;
+            border-radius: 0.5rem;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             position: relative;
-            background-color: #f8fafc;
-            border: 2px solid #e2e8f0;
-            padding: 2px;
-            overflow: hidden;
+            background-color: #ffffff;
+            border: 2px solid #f1f5f9;
+            box-shadow: inset 0 0 2px rgba(0,0,0,0.05);
+            padding-top: 4px;
         }
 
-        .board-cell:nth-child(even) { background-color: #f1f5f9; }
-        .cell-empty { background-color: #e2e8f0 !important; border-color: #cbd5e1 !important; }
+        .board-cell.bg-empty {
+            background-color: #e2e8f0;
+            border-color: #cbd5e1;
+        }
 
         .cell-num {
             position: absolute;
-            top: 2px;
-            left: 4px;
-            font-size: 0.8rem;
-            font-weight: 900;
+            top: 4px;
+            left: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
             color: #94a3b8;
-            z-index: 5;
         }
 
         .cell-emoji {
-            font-size: 1.6rem;
-            margin-top: 10px;
+            font-size: 1.8rem;
+            margin-top: 12px;
             filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
-            z-index: 2;
+            z-index: 5;
         }
 
         .cell-text {
             font-size: 0.65rem;
             font-weight: 800;
             color: #475569;
+            margin-top: 2px;
             text-align: center;
-            line-height: 1.1;
+            line-height: 1;
             text-transform: capitalize;
-            z-index: 2;
         }
 
+        /* Pion Pemain */
         .pion-container {
             position: absolute;
             bottom: 2px;
-            left: 0;
             width: 100%;
             display: flex;
-            flex-wrap: wrap;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 2px;
             z-index: 10;
         }
 
         .pion {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 11px;
             border: 2px solid white;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        /* Modal Pop-up */
+        .modal-box {
+            border: 8px solid #fbbf24; /* Kuning tebal */
+            border-radius: 2rem;
+            background: white;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        .bounce { animation: bouncy 2s infinite; }
-        @keyframes bouncy {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        .dice-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-10deg); }
-            20%, 80% { transform: translate3d(4px, 0, 0) rotate(10deg); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-15deg); }
-            40%, 60% { transform: translate3d(6px, 0, 0) rotate(15deg); }
-        }
-
-        .pop-in { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        /* Animasi */
         @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
+            0% { transform: scale(0.7); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
 
-        @media (max-width: 600px) {
-            .cell-emoji { font-size: 1.2rem; margin-top: 12px; }
+        .dice-anim {
+            animation: shake 0.4s ease-in-out infinite alternate;
+        }
+        @keyframes shake {
+            0% { transform: rotate(-15deg) translateY(-2px); }
+            100% { transform: rotate(15deg) translateY(2px); }
+        }
+
+        @media (max-width: 640px) {
+            .cell-emoji { font-size: 1.3rem; margin-top: 14px; }
             .cell-text { font-size: 0.5rem; }
-            .pion { width: 16px; height: 16px; font-size: 9px; border-width: 1px; }
+            .pion { width: 14px; height: 14px; font-size: 8px; border-width: 1px; }
+            .board-cell { border-width: 1px; }
         }
     </style>
 </head>
-<body class="flex flex-col items-center min-h-screen py-6 px-4">
+<body class="min-h-screen flex flex-col items-center py-6 px-4">
 
-    <!-- Audio BGM -->
+    <!-- BGM -->
     <audio id="bgm" loop preload="auto">
         <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_34b3e34b6b.mp3" type="audio/mpeg">
     </audio>
 
-    <header class="text-center mb-6">
-        <h1 class="text-5xl md:text-6xl heading-font text-sky-500 drop-shadow-lg tracking-wider bounce">LUNCAT!</h1>
-        <p class="text-lg md:text-xl font-bold text-pink-500 mt-2 bg-white/80 px-6 py-2 rounded-full shadow-sm inline-block">
-            Lengkah Ulin Nyusun Carita
-        </p>
+    <!-- Header Title -->
+    <header class="text-center mb-6 w-full fade-in">
+        <h1 class="text-4xl md:text-5xl heading-font text-pink-500 drop-shadow-sm mb-2">LUNCAT!</h1>
+        <div class="bg-white px-6 py-2 rounded-full inline-block shadow-sm">
+            <h2 class="text-sky-600 font-extrabold text-sm md:text-base tracking-wide">Lengkah Ulin Nyusun Carita</h2>
+        </div>
     </header>
 
-    <section id="screen-lang" class="w-full max-w-md bg-white p-8 rounded-[2rem] shadow-2xl border-b-8 border-sky-400 text-center fade-in">
-        <div class="text-7xl mb-4 bounce">🗣️</div>
-        <h2 class="text-2xl heading-font text-gray-800 mb-6">Pilih Bahasa / Pilih Basa</h2>
-        
+    <!-- SCREEN 1: Pilih Bahasa -->
+    <section id="screen-lang" class="w-full max-w-md bg-white p-8 rounded-3xl shadow-lg border-2 border-sky-100 text-center mt-10">
+        <h2 class="text-2xl heading-font text-gray-700 mb-8">Pilih Bahasa / Pilih Basa</h2>
         <div class="flex flex-col gap-4">
-            <button onclick="selectLang('id')" class="w-full bg-red-500 hover:bg-red-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#991b1b] active:translate-y-1 active:shadow-[0_2px_0_#991b1b] transition-all flex justify-center items-center gap-3">
+            <button onclick="selectLang('id')" class="w-full bg-sky-400 hover:bg-sky-500 text-white heading-font text-xl py-4 rounded-2xl shadow-[0_4px_0_#0284c7] active:translate-y-1 active:shadow-none transition-all flex justify-center items-center gap-3">
                 <span>🇮🇩</span> Bahasa Indonesia
             </button>
-            <button onclick="selectLang('su')" class="w-full bg-green-500 hover:bg-green-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#166534] active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all flex justify-center items-center gap-3">
+            <button onclick="selectLang('su')" class="w-full bg-green-400 hover:bg-green-500 text-white heading-font text-xl py-4 rounded-2xl shadow-[0_4px_0_#16a34a] active:translate-y-1 active:shadow-none transition-all flex justify-center items-center gap-3">
                 <span>🌿</span> Basa Sunda
             </button>
         </div>
     </section>
 
-    <section id="screen-names" class="w-full max-w-md bg-white p-8 rounded-[2rem] shadow-2xl border-b-8 border-pink-400 text-center hidden fade-in">
-        <h2 id="lbl-title-names" class="text-2xl heading-font text-gray-800 mb-6">Masukkan Nama 4 Pemain</h2>
-        
-        <div id="error-msg" class="hidden bg-red-100 text-red-600 font-bold p-2 rounded-lg mb-4 text-sm border-2 border-red-300">
+    <!-- SCREEN 2: Input Nama -->
+    <section id="screen-names" class="w-full max-w-md bg-white p-8 rounded-3xl shadow-lg border-2 border-pink-100 text-center hidden mt-10">
+        <h2 id="ui-title-names" class="text-xl heading-font text-gray-700 mb-6">Masukkan Nama 4 Pemain</h2>
+        <div id="error-msg" class="hidden bg-red-100 text-red-600 font-bold p-2 rounded-xl mb-4 text-sm border border-red-200">
             Harap isi semua nama pemain!
         </div>
-
-        <div class="space-y-4 mb-6">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-red-500 border-2 border-red-200 flex items-center justify-center text-2xl shadow-sm">👦🏻</div>
-                <input type="text" id="p1" placeholder="Pemain 1 (Merah)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-red-400 outline-none w-full">
+        <div class="space-y-3 mb-8">
+            <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-lg text-white border-2 border-white shadow-sm">👦🏻</div>
+                <input type="text" id="p1" placeholder="Pemain 1 (Merah)" class="flex-1 bg-transparent font-bold text-gray-700 focus:outline-none placeholder-gray-400 w-full">
             </div>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-blue-500 border-2 border-blue-200 flex items-center justify-center text-2xl shadow-sm">👦🏻</div>
-                <input type="text" id="p2" placeholder="Pemain 2 (Biru)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-blue-400 outline-none w-full">
+            <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-lg text-white border-2 border-white shadow-sm">👦🏻</div>
+                <input type="text" id="p2" placeholder="Pemain 2 (Biru)" class="flex-1 bg-transparent font-bold text-gray-700 focus:outline-none placeholder-gray-400 w-full">
             </div>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-yellow-400 border-2 border-yellow-200 flex items-center justify-center text-2xl shadow-sm">👧🏻</div>
-                <input type="text" id="p3" placeholder="Pemain 3 (Kuning)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-yellow-400 outline-none w-full">
+            <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                <div class="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center text-lg border-2 border-white shadow-sm">👧🏻</div>
+                <input type="text" id="p3" placeholder="Pemain 3 (Kuning)" class="flex-1 bg-transparent font-bold text-gray-700 focus:outline-none placeholder-gray-400 w-full">
             </div>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-green-500 border-2 border-green-200 flex items-center justify-center text-2xl shadow-sm">👧🏻</div>
-                <input type="text" id="p4" placeholder="Pemain 4 (Hijau)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-green-400 outline-none w-full">
+            <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-lg text-white border-2 border-white shadow-sm">👧🏻</div>
+                <input type="text" id="p4" placeholder="Pemain 4 (Hijau)" class="flex-1 bg-transparent font-bold text-gray-700 focus:outline-none placeholder-gray-400 w-full">
             </div>
         </div>
-        
-        <button onclick="startGame()" id="btn-start" class="w-full bg-sky-500 hover:bg-sky-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#0284c7] active:translate-y-1 active:shadow-[0_2px_0_#0284c7] transition-all">
-            Mulai!
+        <button onclick="startGame()" id="ui-btn-start" class="w-full bg-pink-400 hover:bg-pink-500 text-white heading-font text-xl py-4 rounded-2xl shadow-[0_4px_0_#db2777] active:translate-y-1 active:shadow-none transition-all">
+            Mulai Bermain!
         </button>
     </section>
 
-    <section id="screen-game" class="w-full max-w-5xl hidden flex-col lg:flex-row gap-6 items-center lg:items-start justify-center fade-in">
+    <!-- SCREEN 3: Dashboard Game -->
+    <section id="screen-game" class="w-full max-w-6xl hidden flex-col lg:flex-row gap-6 items-start justify-center">
         
-        <!-- Panel Kontrol & Status -->
-        <div class="w-full lg:w-72 flex flex-col gap-4">
-            <div class="bg-white p-5 rounded-[2rem] shadow-xl border-b-8 border-sky-400 text-center">
-                <div class="inline-block bg-sky-100 text-sky-700 px-4 py-1 rounded-full font-bold text-sm mb-3">
-                    <span id="lbl-round-text">Putaran</span> <span id="val-round">1</span> / 3
+        <!-- Panel Kiri (Kontrol & Tas) -->
+        <div class="w-full lg:w-[300px] flex flex-col gap-6">
+            
+            <!-- Kotak Kontrol & Giliran -->
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col items-center text-center">
+                <div class="bg-sky-50 text-sky-600 px-5 py-1.5 rounded-full font-bold text-xs mb-4 inline-block">
+                    <span id="ui-lbl-round">Putaran Ke</span>: <span id="val-round">1</span> / 3
                 </div>
                 
-                <h3 id="lbl-turn-text" class="text-sm font-bold text-gray-500 mb-1">Giliran:</h3>
-                <div class="flex items-center justify-center gap-3 mb-6">
-                    <div id="active-avatar" class="w-14 h-14 rounded-full border-4 shadow-sm flex items-center justify-center text-3xl bg-gray-200">?</div>
-                    <h2 id="active-name" class="text-2xl heading-font text-gray-700 truncate max-w-[120px]">Nama</h2>
+                <h3 id="ui-lbl-turn" class="text-sm font-bold text-gray-500 mb-2">Sekarang Giliran:</h3>
+                <div class="flex items-center justify-center gap-3 mb-6 bg-gray-50 px-4 py-2 rounded-full w-full max-w-[200px]">
+                    <div id="active-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-xl text-white shadow-sm border-2 border-white">?</div>
+                    <h2 id="active-name" class="text-lg heading-font text-red-500 truncate max-w-[100px]">Nama</h2>
                 </div>
                 
-                <div class="flex flex-col items-center gap-4">
-                    <div id="dice" class="w-24 h-24 bg-white border-8 border-gray-200 rounded-2xl flex items-center justify-center text-5xl heading-font shadow-inner text-gray-700 transition-all select-none">
-                        🎲
-                    </div>
-                    <button id="btn-roll" onclick="rollDice()" class="w-full bg-amber-400 hover:bg-amber-500 text-amber-900 heading-font text-xl py-3 rounded-xl shadow-[0_6px_0_#b45309] active:translate-y-1 active:shadow-[0_2px_0_#b45309] transition-all uppercase">
-                        Kocok Dadu
-                    </button>
+                <!-- Dadu -->
+                <div id="dice-container" class="w-20 h-20 bg-gray-100 border-4 border-gray-200 rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-inner text-gray-600">
+                    🎲
                 </div>
+                
+                <button id="btn-roll" onclick="rollDice()" class="w-full bg-[#0ea5e9] hover:bg-sky-500 text-white heading-font text-lg py-3 rounded-2xl shadow-[0_4px_0_#0369a1] active:translate-y-1 active:shadow-none transition-all">
+                    Lempar Dadu
+                </button>
             </div>
             
-            <div class="hidden lg:block bg-white p-4 rounded-[2rem] shadow-xl border-b-8 border-gray-200">
-                <h3 id="lbl-bag-text" class="text-sm heading-font text-gray-500 text-center mb-2">Kantong Pemain</h3>
-                <div id="bag-desktop" class="space-y-2"></div>
+            <!-- Kotak Tas Pemain (Inventory) -->
+            <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
+                <h3 id="ui-lbl-bag" class="text-base heading-font text-gray-700 text-center mb-4">Tas Pemain</h3>
+                <div id="player-bags" class="flex flex-col gap-3">
+                    <!-- Tas akan di-render via JS -->
+                </div>
             </div>
         </div>
 
-        <!-- Area Board/Papan -->
+        <!-- Panel Kanan (Papan) -->
         <div class="w-full lg:w-auto flex justify-center">
-            <div id="board" class="board-container relative"></div>
-        </div>
-
-        <!-- Kantong Mobile -->
-        <div class="block lg:hidden w-full bg-white p-4 rounded-3xl shadow-xl border-b-8 border-gray-200 mt-2">
-            <h3 id="lbl-bag-mobile-text" class="text-sm heading-font text-gray-500 text-center mb-2">Kantong Pemain</h3>
-            <div id="bag-mobile" class="grid grid-cols-2 gap-2"></div>
+            <div class="board-wrapper">
+                <div id="board" class="board-grid relative">
+                    <!-- Kotak-kotak akan di-render via JS -->
+                </div>
+            </div>
         </div>
     </section>
 
-    <section id="screen-result" class="w-full max-w-4xl hidden flex-col items-center text-center fade-in">
-        <h2 id="lbl-result-title" class="text-4xl md:text-5xl heading-font text-amber-500 drop-shadow-md mb-2 bounce">Waktunya Bercerita!</h2>
-        <p id="lbl-result-desc" class="text-lg font-bold text-gray-600 mb-8 bg-white px-6 py-2 rounded-full shadow-sm border-2 border-amber-200">
+    <!-- SCREEN 4: Hasil Akhir -->
+    <section id="screen-result" class="w-full max-w-4xl hidden flex-col items-center text-center mt-10">
+        <h2 id="ui-result-title" class="text-4xl heading-font text-pink-500 mb-3 drop-shadow-sm">Waktunya Bercerita!</h2>
+        <p id="ui-result-desc" class="text-lg font-bold text-gray-600 mb-8 bg-white px-6 py-2 rounded-full shadow-sm">
             Ayo buat cerita lucu dari gambar yang kamu kumpulkan!
         </p>
-
-        <div id="result-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full mb-10"></div>
-
-        <button onclick="location.reload()" id="btn-restart" class="bg-pink-500 hover:bg-pink-600 text-white heading-font text-2xl py-4 px-10 rounded-2xl shadow-[0_8px_0_#be185d] active:translate-y-2 active:shadow-[0_2px_0_#be185d] transition-all">
+        <div id="result-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-10"></div>
+        <button onclick="location.reload()" id="ui-btn-restart" class="bg-[#0ea5e9] hover:bg-sky-500 text-white heading-font text-xl py-4 px-10 rounded-2xl shadow-[0_4px_0_#0369a1] active:translate-y-1 active:shadow-none transition-all">
             Main Lagi
         </button>
     </section>
 
-    <div id="modal-interaction" class="fixed inset-0 bg-slate-900 bg-opacity-80 z-50 hidden flex items-center justify-center backdrop-blur-sm px-4">
-        <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl text-center border-[8px] border-amber-400 pop-in max-w-sm w-full relative">
+    <!-- MODAL POP-UP "Sebutkan!" -->
+    <div id="modal-interaction" class="fixed inset-0 bg-slate-900 bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm px-4">
+        <div class="modal-box p-8 text-center max-w-sm w-full relative">
+            <h3 id="ui-modal-title" class="text-2xl heading-font text-sky-500 mb-2">Sebutkan! 🗣️</h3>
+            <p id="ui-modal-desc" class="text-sm font-bold text-gray-500 mb-6">
+                Sebutkan nama gambar ini dengan suara lantang!
+            </p>
             
-            <h3 id="modal-title" class="text-3xl heading-font text-sky-500 mb-2 bounce">Sebutkan!</h3>
-            
-            <div class="bg-sky-50 rounded-3xl py-6 px-4 mb-6 border-4 border-sky-100 shadow-inner relative mt-4">
-                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-amber-400 text-amber-900 font-bold px-4 py-1 rounded-full border-4 border-white shadow-md">
-                    Kotak <span id="modal-box-num" class="text-xl">1</span>
-                </div>
-                
-                <!-- Area Tampilan Gambar & Teks -->
-                <div id="modal-content-hasitem">
-                    <div id="modal-emoji" class="text-[5rem] filter drop-shadow-lg mb-2">🐱</div>
-                    <div id="modal-word" class="text-3xl heading-font text-gray-700 capitalize">Kucing</div>
-                </div>
-
-                <!-- Area Tampilan Kotak Kosong -->
-                <div id="modal-content-empty" class="hidden">
-                    <div class="text-[5rem] filter grayscale opacity-40 mb-2">🫥</div>
-                    <div id="modal-empty-word" class="text-2xl heading-font text-gray-400">Kosong</div>
-                </div>
+            <!-- Konten Modal: Ada Gambar -->
+            <div id="modal-content-hasitem" class="bg-[#f0f9ff] rounded-2xl py-8 px-4 mb-6 shadow-sm border border-sky-100">
+                <div id="modal-emoji" class="text-6xl mb-4 filter drop-shadow-md">🐴</div>
+                <div id="modal-word" class="text-3xl heading-font text-gray-700 capitalize">Kuda</div>
             </div>
 
-            <p id="modal-instruction-text" class="text-sm font-bold text-gray-500 mb-6 italic">
-                Ayo ucapkan dengan suara lantang!
-            </p>
+            <!-- Konten Modal: Kosong -->
+            <div id="modal-content-empty" class="hidden bg-gray-100 rounded-2xl py-8 px-4 mb-6 shadow-sm border border-gray-200">
+                <div class="text-6xl mb-4 opacity-50 grayscale">🫥</div>
+                <div class="text-5xl heading-font text-gray-500" id="modal-empty-num">15</div>
+                <div id="ui-modal-empty-label" class="text-lg font-bold text-gray-400 mt-2">Angka</div>
+            </div>
 
-            <button onclick="closeModalAndContinue()" id="btn-lanjut" class="w-full bg-green-500 hover:bg-green-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-1 active:shadow-[0_2px_0_#16a34a] transition-all">
-                Lanjut
+            <button onclick="confirmItem()" id="ui-btn-modal" class="w-full bg-[#22c55e] hover:bg-green-600 text-white heading-font text-xl py-4 rounded-2xl shadow-[0_4px_0_#16a34a] active:translate-y-1 active:shadow-none transition-all">
+                Sudah Disebutkan! ✅
             </button>
         </div>
     </div>
@@ -288,27 +285,28 @@
         // Data Kamus & Kosakata
         const dict = {
             id: {
-                title_names: "Masukkan Nama 4 Pemain",
-                btn_start: "Mulai Bermain!",
-                round: "Putaran",
-                turn: "Giliran",
-                btn_roll: "Kocok Dadu",
-                bag: "Kantong Pemain",
-                result_title: "Waktunya Bercerita! 📖",
-                result_desc: "Ayo buat cerita lucu dari gambar yang kamu kumpulkan!",
-                btn_restart: "Main Lagi",
-                modal_title: "Sebutkan!",
-                modal_empty: "Kosong",
-                modal_instruction: "Ayo ucapkan dengan suara lantang!",
-                btn_lanjut: "Lanjut",
+                ui_title_names: "Masukkan Nama 4 Pemain",
+                ui_btn_start: "Mulai Bermain!",
+                ui_lbl_round: "Putaran Ke",
+                ui_lbl_turn: "Sekarang Giliran:",
+                ui_btn_roll: "Lempar Dadu",
+                ui_lbl_bag: "Tas Pemain",
+                ui_result_title: "Waktunya Bercerita!",
+                ui_result_desc: "Ayo buat cerita lucu dari gambar yang kamu kumpulkan!",
+                ui_btn_restart: "Main Lagi",
+                ui_modal_title: "Sebutkan! 🗣️",
+                ui_modal_desc: "Sebutkan nama gambar ini dengan suara lantang!",
+                ui_modal_desc_empty: "Sebutkan angka pada kotak ini dengan suara lantang!",
+                ui_modal_empty_label: "Angka Kotak",
+                ui_btn_modal: "Sudah Disebutkan! ✅",
+                bag_empty: "Tas kosong",
                 
-                // Audio Prompts
-                audio_start: "Halo! Selamat datang di permainan Luncat. Silakan masukkan nama pemain.",
-                audio_begin_game: "Permainan dimulai! Giliran pertama adalah",
-                audio_roll: "Mengocok dadu!",
+                audio_start: "Halo! Selamat datang di Luncat. Silakan masukkan nama.",
+                audio_begin: "Permainan dimulai! Giliran pertama",
+                audio_roll: "Melempar dadu!",
                 audio_prompt_item: "Ayo sebutkan angka dan gambar yang ada pada kotak!",
                 audio_prompt_empty: "Ayo sebutkan angka yang ada pada kotak!",
-                audio_end: "Permainan selesai! Hebat semuanya! Sekarang waktunya setiap pemain bercerita.",
+                audio_end: "Hebat! Sekarang waktunya bercerita.",
 
                 vocab: [
                     { name: "Kucing", emoji: "🐱" }, { name: "Ayam", emoji: "🐔" }, { name: "Burung", emoji: "🐦" },
@@ -317,35 +315,36 @@
                     { name: "Ikan", emoji: "🐟" }, { name: "Katak", emoji: "🐸" }, { name: "Kupu-kupu", emoji: "🦋" },
                     { name: "Belalang", emoji: "🦗" }, { name: "Lebah", emoji: "🐝" }, { name: "Ular", emoji: "🐍" },
                     { name: "Harimau", emoji: "🐯" }, { name: "Gajah", emoji: "🐘" }, { name: "Monyet", emoji: "🐵" },
-                    { name: "Bambu", emoji: "🎋" }, { name: "Rumput", emoji: "🌱" }, { name: "Jamur", emoji: "🍄" },
-                    { name: "Pisang", emoji: "🍌" }, { name: "Singkong", emoji: "🍠" }, { name: "Jagung", emoji: "🌽" },
-                    { name: "Kelapa", emoji: "🥥" }, { name: "Mangga", emoji: "🥭" }, { name: "Bintang", emoji: "⭐" },
-                    { name: "Bulan", emoji: "🌙" }, { name: "Matahari", emoji: "☀️" }, { name: "Awan", emoji: "☁️" },
-                    { name: "Hujan", emoji: "🌧️" }
+                    { name: "Rumput", emoji: "🌱" }, { name: "Jamur", emoji: "🍄" }, { name: "Pisang", emoji: "🍌" },
+                    { name: "Singkong", emoji: "🍠" }, { name: "Jagung", emoji: "🌽" }, { name: "Kelapa", emoji: "🥥" },
+                    { name: "Mangga", emoji: "🥭" }, { name: "Wortel", emoji: "🥕" }, { name: "Apel", emoji: "🍎" },
+                    { name: "Jeruk", emoji: "🍊" }, { name: "Tomat", emoji: "🍅" }, { name: "Kelinci", emoji: "🐰" },
+                    { name: "Bebek", emoji: "🦆" }
                 ]
             },
             su: {
-                title_names: "Lebetkeun Ngaran 4 Pamaén",
-                btn_start: "Mimitian Ulin!",
-                round: "Putaran",
-                turn: "Giliran",
-                btn_roll: "Kocok Dadu",
-                bag: "Kantong Pamaén",
-                result_title: "Waktuna Nyarita! 📖",
-                result_desc: "Hayu urang ngarang carita tina gambar nu dipanggihan!",
-                btn_restart: "Ameng Deui",
-                modal_title: "Sebutkeun!",
-                modal_empty: "Kosong",
-                modal_instruction: "Hayu ucapkeun sing tarik sorana!",
-                btn_lanjut: "Teruskeun",
+                ui_title_names: "Lebetkeun Ngaran 4 Pamaén",
+                ui_btn_start: "Mimitian Ulin!",
+                ui_lbl_round: "Putaran Ka",
+                ui_lbl_turn: "Ayeuna Giliran:",
+                ui_btn_roll: "Kocok Dadu",
+                ui_lbl_bag: "Kantong Pamaén",
+                ui_result_title: "Waktuna Nyarita!",
+                ui_result_desc: "Hayu ngarang carita tina gambar nu dipanggihan!",
+                ui_btn_restart: "Ameng Deui",
+                ui_modal_title: "Sebutkeun! 🗣️",
+                ui_modal_desc: "Sebutkeun ngaran gambar ieu sing tarik sorana!",
+                ui_modal_desc_empty: "Sebutkeun angka dina kotak ieu sing tarik sorana!",
+                ui_modal_empty_label: "Angka Kotak",
+                ui_btn_modal: "Tos Disebutkeun! ✅",
+                bag_empty: "Kantong kosong",
 
-                // Audio Prompts
-                audio_start: "Sampurasun! Wilujeng sumping di kaulinan Luncat. Mangga lebetkeun ngaran pamaén.",
-                audio_begin_game: "Kaulinan dimimitian! Giliran kahiji nyaéta",
+                audio_start: "Sampurasun! Wilujeng sumping di Luncat. Mangga lebetkeun ngaran.",
+                audio_begin: "Kaulinan dimimitian! Giliran kahiji",
                 audio_roll: "Ngocok dadu!",
                 audio_prompt_item: "Hayu sebutkeun angka jeung gambar nu aya dina kotak!",
                 audio_prompt_empty: "Hayu sebutkeun angka nu aya dina kotak!",
-                audio_end: "Kaulinan réngsé! Hébat sadayana! Ayeuna waktuna unggal pamaén nyarita.",
+                audio_end: "Hébat sadayana! Ayeuna waktuna nyarita.",
 
                 vocab: [
                     { name: "Ucing", emoji: "🐱" }, { name: "Hayam", emoji: "🐔" }, { name: "Manuk", emoji: "🐦" },
@@ -354,356 +353,336 @@
                     { name: "Lauk", emoji: "🐟" }, { name: "Bangkong", emoji: "🐸" }, { name: "Kukupu", emoji: "🦋" },
                     { name: "Simeut", emoji: "🦗" }, { name: "Nyiruan", emoji: "🐝" }, { name: "Oray", emoji: "🐍" },
                     { name: "Maung", emoji: "🐯" }, { name: "Gajah", emoji: "🐘" }, { name: "Monyét", emoji: "🐵" },
-                    { name: "Awi", emoji: "🎋" }, { name: "Jukut", emoji: "🌱" }, { name: "Suung", emoji: "🍄" },
-                    { name: "Cau", emoji: "🍌" }, { name: "Sampeu", emoji: "🍠" }, { name: "Jagong", emoji: "🌽" },
-                    { name: "Kalapa", emoji: "🥥" }, { name: "Manggah", emoji: "🥭" }, { name: "Béntang", emoji: "⭐" },
-                    { name: "Bulan", emoji: "🌙" }, { name: "Panonpoé", emoji: "☀️" }, { name: "Méga", emoji: "☁️" },
-                    { name: "Hujan", emoji: "🌧️" }
+                    { name: "Jukut", emoji: "🌱" }, { name: "Suung", emoji: "🍄" }, { name: "Cau", emoji: "🍌" },
+                    { name: "Sampeu", emoji: "🍠" }, { name: "Jagong", emoji: "🌽" }, { name: "Kalapa", emoji: "🥥" },
+                    { name: "Manggah", emoji: "🥭" }, { name: "Wortel", emoji: "🥕" }, { name: "Apel", emoji: "🍎" },
+                    { name: "Jeruk", emoji: "🍊" }, { name: "Tomat", emoji: "🍅" }, { name: "Kelinci", emoji: "🐰" },
+                    { name: "Meri", emoji: "🦆" }
                 ]
             }
         };
 
-        // State Variabel Game
-        let currentLang = 'id';
+        // State Variabel
+        let lang = 'id';
         let players = [];
-        let currentPlayerIdx = 0;
+        let currPlayerIdx = 0;
+        let currentRound = 1;
         const MAX_ROUNDS = 3;
-        const TOTAL_BOXES = 36;
-        let boardData = {}; 
-        let emptyBoxIndices = [];
+        const TOTAL_CELLS = 36;
+        let boardMap = {}; 
         let isAnimating = false;
-        let pendingLandedItem = null; 
+        let landedItem = null; 
 
+        // Definisi Avatar
         const avatars = [
-            { bg: "bg-red-500", border: "border-red-500", text: "text-red-600", emoji: "👦🏻" },
-            { bg: "bg-blue-500", border: "border-blue-500", text: "text-blue-600", emoji: "👦🏻" },
-            { bg: "bg-yellow-400", border: "border-yellow-400", text: "text-yellow-600", emoji: "👧🏻" },
-            { bg: "bg-green-500", border: "border-green-500", text: "text-green-600", emoji: "👧🏻" }
+            { bg: "bg-[#ef4444]", text: "text-red-500", border: "border-red-500", emoji: "👦🏻" }, // Merah
+            { bg: "bg-[#3b82f6]", text: "text-blue-500", border: "border-blue-500", emoji: "👦🏻" }, // Biru
+            { bg: "bg-[#facc15]", text: "text-yellow-500", border: "border-yellow-400", emoji: "👧🏻" }, // Kuning
+            { bg: "bg-[#22c55e]", text: "text-green-500", border: "border-green-500", emoji: "👧🏻" }  // Hijau
         ];
 
+        // TTS Init
         let synth = window.speechSynthesis;
         function speak(text) {
             if (synth.speaking) synth.cancel();
-            let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Gunakan engine ID agar pelafalan huruf alfabet tetap stabil
-            utterance.pitch = 1.7; // Suara tinggi mirip anak-anak
-            utterance.rate = 0.9;
-            synth.speak(utterance);
+            let utt = new SpeechSynthesisUtterance(text);
+            utt.lang = 'id-ID'; 
+            utt.pitch = 1.5; 
+            utt.rate = 0.9;
+            synth.speak(utt);
         }
 
+        // Jalankan BGM
         function playBGM() {
             let bgm = document.getElementById('bgm');
-            bgm.volume = 0.3;
-            bgm.play().catch(e => console.log("BGM butuh interaksi user."));
+            bgm.volume = 0.15;
+            bgm.play().catch(e => console.log("BGM autoplay prevented."));
         }
 
-        function selectLang(lang) {
-            currentLang = lang;
+        function selectLang(selected) {
+            lang = selected;
+            const d = dict[lang];
+
+            // Terapkan translasi teks UI Layar Input
+            document.getElementById('ui-title-names').innerText = d.ui_title_names;
+            document.getElementById('ui-btn-start').innerText = d.ui_btn_start;
+
+            // Terapkan translasi UI Game
+            document.getElementById('ui-lbl-round').innerText = d.ui_lbl_round;
+            document.getElementById('ui-lbl-turn').innerText = d.ui_lbl_turn;
+            document.getElementById('btn-roll').innerText = d.ui_btn_roll;
+            document.getElementById('ui-lbl-bag').innerText = d.ui_lbl_bag;
             
-            // Terapkan translasi UI Layar Input
-            document.getElementById('lbl-title-names').innerText = dict[lang].title_names;
-            document.getElementById('btn-start').innerText = dict[lang].btn_start;
-            
+            // Terapkan translasi Modal & Result
+            document.getElementById('ui-modal-title').innerText = d.ui_modal_title;
+            document.getElementById('ui-modal-empty-label').innerText = d.ui_modal_empty_label;
+            document.getElementById('ui-btn-modal').innerText = d.ui_btn_modal;
+            document.getElementById('ui-result-title').innerText = d.ui_result_title;
+            document.getElementById('ui-result-desc').innerText = d.ui_result_desc;
+            document.getElementById('ui-btn-restart').innerText = d.ui_btn_restart;
+
             document.getElementById('screen-lang').classList.add('hidden');
             document.getElementById('screen-names').classList.remove('hidden');
             
             playBGM();
-            speak(dict[lang].audio_start);
+            speak(d.audio_start);
         }
 
         function startGame() {
-            let p1 = document.getElementById('p1').value.trim() || "Pemain 1";
-            let p2 = document.getElementById('p2').value.trim() || "Pemain 2";
-            let p3 = document.getElementById('p3').value.trim() || "Pemain 3";
-            let p4 = document.getElementById('p4').value.trim() || "Pemain 4";
+            let p1 = document.getElementById('p1').value.trim();
+            let p2 = document.getElementById('p2').value.trim();
+            let p3 = document.getElementById('p3').value.trim();
+            let p4 = document.getElementById('p4').value.trim();
 
-            // Pastikan semua diisi (opsional, tapi disarankan)
-            if(!document.getElementById('p1').value.trim() || !document.getElementById('p2').value.trim() || 
-               !document.getElementById('p3').value.trim() || !document.getElementById('p4').value.trim()){
+            if(!p1 || !p2 || !p3 || !p4) {
                 document.getElementById('error-msg').classList.remove('hidden');
                 return;
             }
 
             players = [
-                { id: 0, name: p1, pos: 0, rounds: 0, items: [] },
-                { id: 1, name: p2, pos: 0, rounds: 0, items: [] },
-                { id: 2, name: p3, pos: 0, rounds: 0, items: [] },
-                { id: 3, name: p4, pos: 0, rounds: 0, items: [] }
+                { id: 0, name: p1, pos: 0, items: [] },
+                { id: 1, name: p2, pos: 0, items: [] },
+                { id: 2, name: p3, pos: 0, items: [] },
+                { id: 3, name: p4, pos: 0, items: [] }
             ];
-
-            // Translasi UI Layar Game & Hasil & Modal
-            const d = dict[currentLang];
-            document.getElementById('lbl-round-text').innerText = d.round;
-            document.getElementById('lbl-turn-text').innerText = d.turn + ":";
-            document.getElementById('btn-roll').innerText = d.btn_roll;
-            document.getElementById('lbl-bag-text').innerText = d.bag;
-            document.getElementById('lbl-bag-mobile-text').innerText = d.bag;
-            
-            document.getElementById('lbl-result-title').innerText = d.result_title;
-            document.getElementById('lbl-result-desc').innerText = d.result_desc;
-            document.getElementById('btn-restart').innerText = d.btn_restart;
-            
-            document.getElementById('modal-title').innerText = d.modal_title;
-            document.getElementById('modal-empty-word').innerText = d.modal_empty;
-            document.getElementById('modal-instruction-text').innerText = d.modal_instruction;
-            document.getElementById('btn-lanjut').innerText = d.btn_lanjut;
 
             document.getElementById('screen-names').classList.add('hidden');
             document.getElementById('screen-game').classList.remove('hidden');
             document.getElementById('screen-game').classList.add('flex');
 
-            buildBoard();
-            updateUI();
+            generateBoard();
+            updateDashboard();
             
-            speak(d.audio_begin_game + " " + players[0].name);
+            speak(dict[lang].audio_begin + " " + players[0].name);
         }
 
-        function buildBoard() {
-            // Pilih 5 kotak kosong secara acak
-            emptyBoxIndices = [];
-            while(emptyBoxIndices.length < 5) {
-                let r = Math.floor(Math.random() * TOTAL_BOXES) + 1;
-                if(!emptyBoxIndices.includes(r)) emptyBoxIndices.push(r);
+        function generateBoard() {
+            // Tentukan 5 kotak kosong acak
+            let emptySet = new Set();
+            while(emptySet.size < 5) {
+                emptySet.add(Math.floor(Math.random() * TOTAL_CELLS) + 1);
             }
 
-            // Acak Kosakata
-            let shuffledVocab = [...dict[currentLang].vocab].sort(() => Math.random() - 0.5);
-            let vocabIdx = 0;
-
+            // Acak vocab
+            let vocabArr = [...dict[lang].vocab].sort(() => Math.random() - 0.5);
+            let vIdx = 0;
+            
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
-            boardData = {};
+            boardMap = {};
 
-            // Render baris dari atas (baris 5) ke bawah (baris 0)
+            // Render ZigZag dari baris 5 (atas) ke 0 (bawah)
             for(let row = 5; row >= 0; row--) {
                 for(let col = 0; col < 6; col++) {
-                    let isEvenRow = (row % 2 === 0);
-                    let actualCol = isEvenRow ? col : (5 - col);
-                    let boxNum = row * 6 + actualCol + 1;
+                    // Logika ular tangga zigzag standar
+                    let actualCol = (row % 2 === 0) ? col : (5 - col);
+                    let cellNum = (row * 6) + actualCol + 1;
 
                     let item = null;
-                    if(!emptyBoxIndices.includes(boxNum) && vocabIdx < shuffledVocab.length) {
-                        item = shuffledVocab[vocabIdx];
-                        vocabIdx++;
+                    if(!emptySet.has(cellNum) && vIdx < vocabArr.length) {
+                        item = vocabArr[vIdx++];
                     }
-                    boardData[boxNum] = item;
+                    boardMap[cellNum] = item;
 
-                    let cellDiv = document.createElement('div');
-                    cellDiv.className = `board-cell ${item ? '' : 'cell-empty'}`;
-                    cellDiv.id = `box-${boxNum}`;
+                    let isBgEmpty = item ? '' : 'bg-empty';
+                    let contentHtml = `<div class="cell-num">${cellNum}</div>`;
                     
-                    let innerHTML = `<div class="cell-num">${boxNum}</div>`;
                     if(item) {
-                        innerHTML += `<div class="cell-emoji">${item.emoji}</div><div class="cell-text">${item.name}</div>`;
+                        contentHtml += `<div class="cell-emoji">${item.emoji}</div><div class="cell-text">${item.name}</div>`;
                     }
-                    innerHTML += `<div class="pion-container" id="pions-${boxNum}"></div>`;
-                    
-                    cellDiv.innerHTML = innerHTML;
-                    boardEl.appendChild(cellDiv);
+                    contentHtml += `<div class="pion-container" id="cell-pions-${cellNum}"></div>`;
+
+                    boardEl.innerHTML += `<div class="board-cell ${isBgEmpty}" id="cell-${cellNum}">${contentHtml}</div>`;
                 }
             }
         }
 
-        function updateUI() {
-            let p = players[currentPlayerIdx];
-            let ava = avatars[currentPlayerIdx];
-            
+        function updateDashboard() {
+            let p = players[currPlayerIdx];
+            let ava = avatars[currPlayerIdx];
+
+            // Update Giliran Box
+            document.getElementById('val-round').innerText = currentRound;
             document.getElementById('active-name').innerText = p.name;
-            document.getElementById('active-name').className = `text-2xl heading-font truncate max-w-[120px] ${ava.text}`;
+            document.getElementById('active-name').className = `text-lg heading-font truncate max-w-[100px] ${ava.text}`;
             
             let avaEl = document.getElementById('active-avatar');
             avaEl.innerText = ava.emoji;
-            avaEl.className = `w-14 h-14 rounded-full border-4 shadow-sm flex items-center justify-center text-3xl text-white ${ava.bg} ${ava.border}`;
-            
-            let currentDisplayRound = Math.min(p.rounds + 1, MAX_ROUNDS);
-            document.getElementById('val-round').innerText = currentDisplayRound;
+            avaEl.className = `w-10 h-10 rounded-full flex items-center justify-center text-xl text-white shadow-sm border-2 border-white ${ava.bg}`;
 
-            renderBag('bag-desktop');
-            renderBag('bag-mobile');
-        }
+            // Update Tas Pemain
+            let bagsHtml = '';
+            players.forEach((player, idx) => {
+                let av = avatars[idx];
+                let isMe = (idx === currPlayerIdx);
+                // Highlight border merah (atau warna avatar) untuk pemain aktif
+                let styleWrap = isMe ? `border-2 border-red-500 bg-white` : `border border-transparent bg-gray-50 opacity-60`;
+                
+                let itemHtml = player.items.length > 0
+                    ? player.items.map(i => `<span class="bg-[#f1f5f9] p-1 rounded text-sm">${i.emoji}</span>`).join('')
+                    : `<span class="text-[10px] text-gray-400 italic">${dict[lang].bag_empty}</span>`;
 
-        function renderBag(containerId) {
-            let container = document.getElementById(containerId);
-            if(!container) return;
-            container.innerHTML = '';
-
-            players.forEach((p, idx) => {
-                let ava = avatars[idx];
-                let isActive = (idx === currentPlayerIdx);
-                let activeStyle = isActive ? `border-2 ${ava.border} bg-white shadow-md` : `border-2 border-transparent bg-gray-50 opacity-70`;
-
-                let itemsHtml = p.items.length > 0 
-                    ? p.items.map(i => `<span class="bg-gray-100 rounded px-1 py-0.5 text-sm md:text-base">${i.emoji}</span>`).join('')
-                    : `<span class="text-xs text-gray-400 italic">Kosong</span>`;
-
-                container.innerHTML += `
-                    <div class="p-2 rounded-xl flex flex-col gap-1 transition-all ${activeStyle}">
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded-full ${ava.bg} flex items-center justify-center text-[10px] border border-white text-white">${ava.emoji}</div>
-                            <span class="font-bold text-sm ${ava.text} truncate">${p.name}</span>
+                bagsHtml += `
+                    <div class="rounded-xl p-2 transition-all ${styleWrap}">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-5 h-5 rounded-full ${av.bg} flex justify-center items-center text-[8px] text-white">${av.emoji}</div>
+                            <span class="font-bold text-xs ${av.text} truncate w-16">${player.name}</span>
                         </div>
-                        <div class="flex flex-wrap gap-1 min-h-[24px] items-center">
-                            ${itemsHtml}
+                        <div class="flex flex-wrap gap-1 min-h-[24px] items-center px-1">
+                            ${itemHtml}
                         </div>
                     </div>
                 `;
             });
+            document.getElementById('player-bags').innerHTML = bagsHtml;
         }
 
         function rollDice() {
             if(isAnimating) return;
-            let p = players[currentPlayerIdx];
-            if(p.rounds >= MAX_ROUNDS) return;
-
             isAnimating = true;
+
             let btn = document.getElementById('btn-roll');
-            let dice = document.getElementById('dice');
+            let dice = document.getElementById('dice-container');
             
             btn.classList.add('opacity-50', 'pointer-events-none');
-            dice.classList.add('dice-shake', 'bg-amber-50', 'text-amber-500', 'border-amber-300');
+            dice.classList.add('dice-anim');
+            dice.innerHTML = '🎲';
             
-            speak(dict[currentLang].audio_roll);
+            speak(dict[lang].audio_roll);
 
-            let ticks = 0;
+            let rollVal = 1;
+            let counter = 0;
             let interval = setInterval(() => {
-                dice.innerText = Math.floor(Math.random() * 6) + 1;
-                ticks++;
-                if(ticks > 12) {
+                rollVal = Math.floor(Math.random() * 6) + 1;
+                counter++;
+                if(counter > 10) {
                     clearInterval(interval);
-                    let finalVal = Math.floor(Math.random() * 6) + 1;
-                    dice.innerText = finalVal;
-                    dice.classList.remove('dice-shake', 'bg-amber-50', 'border-amber-300');
+                    dice.classList.remove('dice-anim');
+                    // Ganti icon dadu dengan gambar angka statis bergaya (atau emoji dadu spesifik)
+                    const diceFaces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+                    dice.innerHTML = `<span class="text-6xl text-[#0284c7] drop-shadow-sm">${diceFaces[rollVal-1]}</span>`;
                     
-                    setTimeout(() => movePion(finalVal), 500);
+                    setTimeout(() => movePlayer(rollVal), 600);
                 }
-            }, 60);
+            }, 80);
         }
 
-        function movePion(steps) {
-            let p = players[currentPlayerIdx];
-            let targetPos = p.pos + steps;
-            if (targetPos > TOTAL_BOXES) targetPos = TOTAL_BOXES;
-            
-            p.pos = targetPos;
-            
-            // Render ulang semua pion di papan
-            for(let i=1; i<=TOTAL_BOXES; i++) {
-                document.getElementById(`pions-${i}`).innerHTML = '';
+        function movePlayer(steps) {
+            let p = players[currPlayerIdx];
+            let nextPos = p.pos + steps;
+            if (nextPos > TOTAL_CELLS) nextPos = TOTAL_CELLS;
+            p.pos = nextPos;
+
+            // Bersihkan semua pion
+            for(let i=1; i<=TOTAL_CELLS; i++) {
+                let c = document.getElementById(`cell-pions-${i}`);
+                if(c) c.innerHTML = '';
             }
 
-            players.forEach((player, idx) => {
-                if(player.pos > 0) {
-                    let ava = avatars[idx];
-                    let pCont = document.getElementById(`pions-${player.pos}`);
-                    if(pCont) {
-                        let pionEl = document.createElement('div');
-                        pionEl.className = `pion ${ava.bg} text-white ${ava.border}`;
-                        pionEl.innerText = ava.emoji;
-                        pCont.appendChild(pionEl);
+            // Render ulang letak pion
+            players.forEach((pl, idx) => {
+                if(pl.pos > 0) {
+                    let container = document.getElementById(`cell-pions-${pl.pos}`);
+                    if(container) {
+                        let av = avatars[idx];
+                        container.innerHTML += `<div class="pion ${av.bg} ${av.text.replace('text-','border-')}">${av.emoji}</div>`;
                     }
                 }
             });
 
-            // Tampilkan Modal setelah pion pindah
-            setTimeout(() => {
-                showModal(targetPos);
-            }, 800);
+            // Tampilkan popup modal
+            setTimeout(() => { openModal(nextPos); }, 600);
         }
 
-        function showModal(boxNum) {
-            let item = boardData[boxNum];
-            pendingLandedItem = item;
+        function openModal(cellNum) {
+            let item = boardMap[cellNum];
+            landedItem = item;
 
-            document.getElementById('modal-box-num').innerText = boxNum;
-
-            let divHasItem = document.getElementById('modal-content-hasitem');
+            let divHas = document.getElementById('modal-content-hasitem');
             let divEmpty = document.getElementById('modal-content-empty');
+            let d = dict[lang];
 
             if(item) {
-                divHasItem.classList.remove('hidden');
+                divHas.classList.remove('hidden');
                 divEmpty.classList.add('hidden');
                 document.getElementById('modal-emoji').innerText = item.emoji;
                 document.getElementById('modal-word').innerText = item.name;
+                document.getElementById('ui-modal-desc').innerText = d.ui_modal_desc;
                 
-                // Audio HANYA menyuruh anak menyebutkan, tidak menyebutkan namanya
-                speak(dict[currentLang].audio_prompt_item);
+                speak(d.audio_prompt_item); // Audio hanya menyuruh, tidak menyebut isi
             } else {
-                divHasItem.classList.add('hidden');
+                divHas.classList.add('hidden');
                 divEmpty.classList.remove('hidden');
-                
-                // Audio menyuruh menyebutkan angka
-                speak(dict[currentLang].audio_prompt_empty);
+                document.getElementById('modal-empty-num').innerText = cellNum;
+                document.getElementById('ui-modal-desc').innerText = d.ui_modal_desc_empty;
+
+                speak(d.audio_prompt_empty);
             }
 
             document.getElementById('modal-interaction').classList.remove('hidden');
         }
 
-        function closeModalAndContinue() {
-            let p = players[currentPlayerIdx];
-            
-            // Simpan gambar jika ada
-            if(pendingLandedItem) {
-                p.items.push(pendingLandedItem);
+        function confirmItem() {
+            let p = players[currPlayerIdx];
+            if(landedItem) {
+                p.items.push(landedItem);
             }
-            
-            p.rounds++;
-            pendingLandedItem = null;
+            landedItem = null;
 
             document.getElementById('modal-interaction').classList.add('hidden');
+            document.getElementById('dice-container').innerHTML = '🎲';
             
             let btn = document.getElementById('btn-roll');
             btn.classList.remove('opacity-50', 'pointer-events-none');
-            document.getElementById('dice').innerText = '🎲';
-            document.getElementById('dice').classList.remove('text-amber-500');
             
-            checkGameStatus();
+            nextTurn();
         }
 
-        function checkGameStatus() {
-            let allFinished = players.every(p => p.rounds >= MAX_ROUNDS);
-            
-            if(allFinished) {
-                showResultScreen();
+        function nextTurn() {
+            currPlayerIdx++;
+            if(currPlayerIdx > 3) {
+                currPlayerIdx = 0;
+                currentRound++;
+            }
+
+            if(currentRound > MAX_ROUNDS) {
+                finishGame();
             } else {
-                currentPlayerIdx = (currentPlayerIdx + 1) % 4;
-                updateUI();
+                updateDashboard();
                 isAnimating = false;
             }
         }
 
-        function showResultScreen() {
+        function finishGame() {
             document.getElementById('screen-game').classList.add('hidden');
             document.getElementById('screen-game').classList.remove('flex');
             document.getElementById('screen-result').classList.remove('hidden');
             document.getElementById('screen-result').classList.add('flex');
             
-            speak(dict[currentLang].audio_end);
+            speak(dict[lang].audio_end);
 
             let grid = document.getElementById('result-grid');
             grid.innerHTML = '';
 
             players.forEach((p, idx) => {
-                let ava = avatars[idx];
-                
-                let itemsHtml = p.items.length > 0
-                    ? p.items.map(item => `
-                        <div class="bg-white border-2 border-gray-100 rounded-2xl w-[70px] flex flex-col items-center p-2 shadow-sm">
-                            <span class="text-3xl mb-1">${item.emoji}</span>
-                            <span class="text-[10px] font-bold text-gray-600 truncate w-full text-center capitalize">${item.name}</span>
+                let av = avatars[idx];
+                let itemTags = p.items.length > 0
+                    ? p.items.map(i => `
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-2 flex flex-col items-center">
+                            <span class="text-3xl">${i.emoji}</span>
+                            <span class="text-[10px] font-bold text-gray-600 capitalize mt-1">${i.name}</span>
                         </div>
                     `).join('')
-                    : `<div class="text-gray-400 italic font-bold p-4 text-center w-full text-sm">Teu aya gambar / Kosong</div>`;
+                    : `<div class="text-sm text-gray-400 italic py-2">${dict[lang].bag_empty}</div>`;
 
                 grid.innerHTML += `
-                    <div class="bg-gray-50 rounded-[2rem] p-5 border-l-8 ${ava.border} shadow-xl text-left pop-in">
-                        <div class="flex items-center gap-3 mb-3 border-b-2 border-gray-200 pb-2">
-                            <div class="w-12 h-12 rounded-full ${ava.bg} border-2 border-white shadow-md flex items-center justify-center text-2xl text-white">${ava.emoji}</div>
-                            <h3 class="text-xl heading-font ${ava.text}">${p.name}</h3>
+                    <div class="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm flex flex-col items-center text-center">
+                        <div class="w-14 h-14 rounded-full ${av.bg} text-white text-3xl flex items-center justify-center border-4 border-white shadow-sm mb-2">
+                            ${av.emoji}
                         </div>
-                        <div class="bg-white/80 rounded-2xl p-3 border border-gray-100">
-                            <div class="flex gap-2 flex-wrap justify-center min-h-[80px] items-center">
-                                ${itemsHtml}
-                            </div>
+                        <h3 class="text-xl heading-font ${av.text} mb-3">${p.name}</h3>
+                        <div class="w-full flex gap-2 justify-center flex-wrap bg-[#f8fafc] p-3 rounded-2xl border border-slate-100">
+                            ${itemTags}
                         </div>
                     </div>
                 `;
