@@ -6,538 +6,410 @@
     <title>LUNCAT - Lengkah Ulin Nyusun Carita</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;800&display=swap');
-        body { font-family: 'Nunito', sans-serif; background-color: #f0fdf4; overflow-x: hidden; }
-        h1, h2, h3, .font-title { font-family: 'Fredoka One', cursive; }
-        
-        .board-container {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            grid-template-rows: repeat(6, 1fr);
-            gap: 4px;
-            width: 100%;
-            max-width: 600px;
-            aspect-ratio: 1/1;
-            margin: 0 auto;
-            background: #dcfce7;
-            padding: 8px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        .board-cell {
-            background-color: #ffffff;
-            border: 2px solid #bbf7d0;
-            border-radius: 8px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-        }
-
-        .cell-number {
-            position: absolute;
-            top: 2px;
-            left: 4px;
-            font-size: 0.8rem;
-            color: #16a34a;
-        }
-
-        .cell-emoji { font-size: 2rem; }
-        .cell-name { font-size: 0.6rem; color: #374151; text-transform: capitalize; margin-top: -4px;}
-        
-        /* Pewarnaan sel seperti papan catur */
-        .board-cell:nth-child(even) { background-color: #fef3c7; border-color: #fde68a; }
-
-        .pawn {
-            position: absolute;
-            font-size: 1.5rem;
-            transition: all 0.5s ease;
-            z-index: 10;
-            filter: drop-shadow(2px 4px 2px rgba(0,0,0,0.3));
-        }
-
-        /* Offset pion agar jika ada di kotak yang sama tidak bertumpuk */
-        .pawn-0 { transform: translate(-10px, -10px); }
-        .pawn-1 { transform: translate(10px, -10px); }
-        .pawn-2 { transform: translate(-10px, 10px); }
-        .pawn-3 { transform: translate(10px, 10px); }
-
-        .dice-anim { animation: shake 0.5s infinite; }
-        @keyframes shake {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(15deg); }
-            50% { transform: rotate(0deg); }
-            75% { transform: rotate(-15deg); }
-            100% { transform: rotate(0deg); }
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #4ade80; border-radius: 4px; }
+        .grid-board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+        .pion { position: absolute; width: 26px; height: 26px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); border: 2px solid white; transition: all 0.5s ease-in-out; z-index: 20; }
+        .pion-0 { bottom: 2px; left: 2px; }
+        .pion-1 { bottom: 2px; right: 2px; }
+        .pion-2 { top: 2px; left: 2px; }
+        .pion-3 { top: 2px; right: 2px; }
+        /* Animasi masuk */
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
-<body class="bg-green-50 text-gray-800 min-h-screen flex flex-col">
+<body class="bg-sky-100 font-sans min-h-screen flex items-center justify-center p-4 selection:bg-none relative overflow-x-hidden">
 
-    <!-- Musik Latar (Akan diputar setelah user interaksi) -->
-    <audio id="bgm" loop>
-        <source src="https://assets.mixkit.co/music/preview/mixkit-carefree-ukulele-163.mp3" type="audio/mpeg">
-    </audio>
+    <!-- Musik Latar (Otomatis diputar saat bahasa dipilih) -->
+    <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_34b3e34b6b.mp3" loop preload="auto"></audio>
 
-    <!-- Header -->
-    <header class="bg-green-500 text-white p-4 text-center shadow-md relative z-20">
-        <h1 class="text-3xl md:text-4xl drop-shadow-md">LUNCAT</h1>
-        <p class="text-sm md:text-base font-bold">Lengkah Ulin Nyusun Carita</p>
-    </header>
-
-    <main class="flex-grow flex flex-col items-center justify-center p-4 relative z-10 w-full max-w-4xl mx-auto">
+    <!-- 1. LAYAR PILIH BAHASA -->
+    <div id="lang-screen" class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-white fade-in">
+        <h1 class="text-5xl font-extrabold text-blue-600 mb-2 drop-shadow-sm">LUNCAT</h1>
+        <p class="text-gray-600 mb-8 font-semibold">Lengkah Ulin Nyusun Carita</p>
         
-        <!-- LAYAR 1: PILIH BAHASA -->
-        <div id="screen-language" class="w-full text-center bg-white p-8 rounded-2xl shadow-xl border-4 border-green-200">
-            <h2 class="text-2xl mb-8 font-title text-green-600">Pilih Bahasa / Pilih Basa</h2>
-            <div class="flex flex-col md:flex-row justify-center gap-6">
-                <button onclick="setLanguage('id')" class="bg-red-500 hover:bg-red-600 text-white text-xl font-bold py-4 px-8 rounded-full shadow-lg transform transition hover:scale-105 flex items-center justify-center gap-2">
-                    🇮🇩 Bahasa Indonesia
-                </button>
-                <button onclick="setLanguage('su')" class="bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-4 px-8 rounded-full shadow-lg transform transition hover:scale-105 flex items-center justify-center gap-2">
-                    🌿 Basa Sunda
-                </button>
-            </div>
-            <p class="mt-6 text-gray-500 text-sm">Pastikan volume suara perangkat Anda sudah menyala!</p>
-        </div>
-
-        <!-- LAYAR 2: INPUT NAMA -->
-        <div id="screen-setup" class="hidden w-full text-center bg-white p-6 rounded-2xl shadow-xl border-4 border-green-200 max-w-md">
-            <h2 id="setup-title" class="text-xl mb-4 font-title text-green-600">Masukkan Nama Pemain</h2>
-            <div class="space-y-4">
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">👦🏻</span>
-                    <input type="text" id="p1-name" class="flex-grow border-2 border-red-300 rounded-lg p-2 text-lg focus:outline-none focus:border-red-500 font-bold text-red-600 placeholder-red-200" placeholder="Pemain 1 (Merah)">
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">👧🏻</span>
-                    <input type="text" id="p2-name" class="flex-grow border-2 border-yellow-300 rounded-lg p-2 text-lg focus:outline-none focus:border-yellow-500 font-bold text-yellow-600 placeholder-yellow-200" placeholder="Pemain 2 (Kuning)">
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">👦🏻</span>
-                    <input type="text" id="p3-name" class="flex-grow border-2 border-blue-300 rounded-lg p-2 text-lg focus:outline-none focus:border-blue-500 font-bold text-blue-600 placeholder-blue-200" placeholder="Pemain 3 (Biru)">
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">👧🏻</span>
-                    <input type="text" id="p4-name" class="flex-grow border-2 border-green-300 rounded-lg p-2 text-lg focus:outline-none focus:border-green-500 font-bold text-green-600 placeholder-green-200" placeholder="Pemain 4 (Hijau)">
-                </div>
-            </div>
-            <button onclick="startGame()" id="btn-start" class="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-title text-xl py-3 rounded-xl shadow-lg transform transition hover:scale-105">
-                Mulai Bermain!
+        <h2 class="text-xl font-bold mb-6 text-gray-800">Pilih Bahasa / Pilih Basa</h2>
+        <div class="flex flex-col gap-4">
+            <button onclick="selectLanguage('id')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-5 rounded-2xl shadow-[0_6px_0_rgb(185,28,28)] active:shadow-none active:translate-y-2 transition-all text-2xl flex items-center justify-center gap-3">
+                <span>🇮🇩</span> Bahasa Indonesia
             </button>
-            <p id="error-msg" class="text-red-500 font-bold mt-2 hidden text-sm"></p>
+            <button onclick="selectLanguage('su')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-5 rounded-2xl shadow-[0_6px_0_rgb(21,128,61)] active:shadow-none active:translate-y-2 transition-all text-2xl flex items-center justify-center gap-3">
+                <span>🌿</span> Basa Sunda
+            </button>
         </div>
+    </div>
 
-        <!-- LAYAR 3: PAPAN PERMAINAN -->
-        <div id="screen-game" class="hidden w-full flex-col items-center">
-            
-            <div class="w-full max-w-600 flex justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-md border-2 border-green-200">
-                <div class="text-left">
-                    <p id="round-indicator" class="font-bold text-gray-500 text-sm md:text-base">Putaran 1 / 2</p>
-                    <p class="font-title text-lg md:text-2xl text-green-600" id="turn-indicator">Giliran: Pemain 1</p>
-                </div>
-                <div class="text-right flex items-center gap-2">
-                    <div id="dice-display" class="text-5xl">🎲</div>
-                    <button id="btn-roll" onclick="rollDice()" class="bg-yellow-400 hover:bg-yellow-500 text-white font-title text-lg md:text-xl py-2 px-4 rounded-xl shadow-md transform transition active:scale-95 border-b-4 border-yellow-600">
-                        Lempar!
-                    </button>
-                </div>
-            </div>
-
-            <!-- Papan Grid -->
-            <div class="board-container relative" id="board">
-                <!-- Sel dan Pion akan dirender oleh JavaScript -->
-            </div>
-            
-            <p id="instruction-text" class="mt-4 text-center font-bold text-green-700 bg-green-100 py-2 px-4 rounded-full shadow-sm animate-pulse">
-                Dengarkan instruksi!
-            </p>
+    <!-- 2. LAYAR INPUT NAMA -->
+    <div id="name-screen" class="hidden bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-yellow-300 fade-in">
+        <h2 id="name-title" class="text-2xl font-extrabold mb-6 text-gray-800">Masukkan Nama 4 Pemain</h2>
+        <div class="flex flex-col gap-4 mb-8">
+            <input type="text" id="p1" placeholder="Pemain 1 (Anak Laki-Laki Merah)" class="border-4 border-red-300 p-3 rounded-xl w-full focus:outline-none focus:border-red-500 font-bold text-center text-lg" />
+            <input type="text" id="p2" placeholder="Pemain 2 (Anak Laki-Laki Biru)" class="border-4 border-blue-300 p-3 rounded-xl w-full focus:outline-none focus:border-blue-500 font-bold text-center text-lg" />
+            <input type="text" id="p3" placeholder="Pemain 3 (Anak Perempuan Kuning)" class="border-4 border-yellow-300 p-3 rounded-xl w-full focus:outline-none focus:border-yellow-500 font-bold text-center text-lg" />
+            <input type="text" id="p4" placeholder="Pemain 4 (Anak Perempuan Hijau)" class="border-4 border-green-300 p-3 rounded-xl w-full focus:outline-none focus:border-green-500 font-bold text-center text-lg" />
         </div>
+        <button onclick="startGame()" id="btn-start" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-[0_6px_0_rgb(29,78,216)] active:shadow-none active:translate-y-2 transition-all text-2xl">
+            Mulai Bermain
+        </button>
+    </div>
 
-        <!-- LAYAR 4: HASIL (NYARITA) -->
-        <div id="screen-result" class="hidden w-full max-w-4xl">
-            <div class="bg-white p-6 rounded-2xl shadow-xl border-4 border-green-300 text-center">
-                <h2 id="result-title" class="text-3xl font-title text-green-600 mb-2">Waktunya Bercerita!</h2>
-                <p id="result-subtitle" class="text-gray-600 font-bold mb-6">Ayo susun cerita dari gambar yang kalian dapatkan!</p>
-                
-                <div id="result-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Kartu hasil per pemain dirender JS -->
-                </div>
-
-                <button onclick="location.reload()" class="mt-8 bg-blue-500 hover:bg-blue-600 text-white font-title text-xl py-3 px-8 rounded-xl shadow-lg transform transition hover:scale-105">
-                    Main Lagi
-                </button>
+    <!-- 3. LAYAR PAPAN PERMAINAN -->
+    <div id="game-screen" class="hidden flex-col items-center w-full max-w-2xl bg-white p-4 sm:p-6 rounded-3xl shadow-2xl border-4 border-yellow-400 fade-in">
+        
+        <!-- Info Giliran -->
+        <div class="flex justify-between w-full mb-4 items-center bg-blue-50 p-3 rounded-2xl border-2 border-blue-200">
+            <div id="turn-indicator" class="text-lg sm:text-xl font-extrabold text-blue-700 flex items-center gap-2"></div>
+            <div class="bg-white px-4 py-1 rounded-full shadow-sm border border-gray-200 text-sm sm:text-base font-bold text-gray-600">
+                <span id="lbl-putaran">Putaran:</span> <span id="turn-count" class="text-blue-600 text-lg">1</span>/3
             </div>
         </div>
+        
+        <!-- Papan Grid -->
+        <div class="bg-sky-200 p-2 sm:p-3 rounded-2xl w-full max-w-fit shadow-inner mb-6 relative">
+            <div id="board" class="grid-board relative"></div>
+            <!-- Pion-pion -->
+            <div id="pion-0" class="pion bg-red-500 text-white shadow-lg hidden">👦🏻</div>
+            <div id="pion-1" class="pion bg-blue-500 text-white shadow-lg hidden">👦🏻</div>
+            <div id="pion-2" class="pion bg-yellow-400 text-black shadow-lg hidden">👧🏻</div>
+            <div id="pion-3" class="pion bg-green-500 text-white shadow-lg hidden">👧🏻</div>
+        </div>
 
-    </main>
+        <!-- Dadu & Tombol Kocok -->
+        <div class="flex flex-col items-center w-full bg-gray-50 p-4 rounded-2xl border-2 border-dashed border-gray-300">
+            <div id="dice" class="w-20 h-20 bg-white border-4 border-gray-800 rounded-2xl shadow-lg flex justify-center items-center text-4xl mb-4 font-bold text-gray-800 transition-transform duration-300">
+                🎲
+            </div>
+            <button id="btn-roll" onclick="rollDice()" class="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-extrabold py-3 px-10 rounded-full shadow-[0_6px_0_rgb(202,138,4)] active:shadow-none active:translate-y-2 transition-all text-2xl uppercase tracking-wider">
+                Kocok Dadu
+            </button>
+        </div>
+    </div>
 
+    <!-- 4. LAYAR BERCERITA (HASIL AKHIR) -->
+    <div id="result-screen" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-3xl w-full text-center border-4 border-green-500 fade-in">
+        <h2 id="story-title" class="text-3xl sm:text-5xl font-extrabold text-green-600 mb-8 drop-shadow-sm">Waktunya Bercerita!</h2>
+        <p id="story-desc" class="text-lg font-semibold text-gray-600 mb-8"></p>
+        <div id="result-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+        <button onclick="location.reload()" class="mt-8 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-[0_4px_0_rgb(29,78,216)] active:translate-y-1 transition-all text-xl">
+            Main Lagi
+        </button>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Data Kosakata (Indonesia & Sunda)
+        // Data Bahasa dan Kosakata
         const dict = {
             id: {
-                setupTitle: "Masukkan Nama Pemain",
-                p1: "Pemain 1 (Merah)", p2: "Pemain 2 (Kuning)", p3: "Pemain 3 (Biru)", p4: "Pemain 4 (Hijau)",
-                btnStart: "Mulai Bermain!",
-                errName: "Isi semua nama pemain dulu ya!",
-                turn: "Giliran:",
-                round: "Putaran",
-                btnRoll: "Lempar!",
-                resTitle: "Waktunya Bercerita!",
-                resSub: "Ayo susun cerita dari gambar yang kalian dapatkan!",
-                audioWelcome: "Selamat datang di permainan Luncat! Lengkah Ulin Nyusun Carita. Silakan isi nama pemain.",
-                audioTurnTemplate: (name) => `Giliran ${name}, ayo lempar dadu!`,
-                audioMoveTemplate: (num, itemName) => itemName ? `Kamu di kotak nomor ${num}. Kamu dapat gambar ${itemName}.` : `Kamu di kotak nomor ${num}. Kotaknya kosong.`,
-                audioEnd: "Permainan selesai! Hore! Ayo ceritakan gambar yang kalian dapatkan!",
+                sel_lang_audio: "Halo! Selamat datang di permainan Luncat! Pilih bahasa yang ingin kamu gunakan.",
+                input_names_title: "Masukkan Nama 4 Pemain",
+                input_names_audio: "Luar biasa! Sekarang, silakan minta guru atau orang tuamu memasukkan nama keempat pemain.",
+                start_btn: "Mulai Bermain",
+                turn: "Giliran",
+                round: "Putaran:",
+                roll_dice: "Kocok Dadu",
+                game_start_audio: "Hore, permainan dimulai! Ayo kita bermain. Giliran pertama adalah",
+                turn_audio: "Giliran",
+                roll_audio: "Mengocok dadu!",
+                empty_box: "Kosong. Ini kotak angka",
+                story_time_title: "Waktunya Bercerita!",
+                story_desc: "Ayo buat cerita lucu dari gambar yang kamu kumpulkan!",
+                story_time_audio: "Permainan selesai! Hebat semuanya! Sekarang waktunya setiap pemain bercerita menggunakan gambar yang sudah didapatkan.",
+                items: ["Kucing", "Ayam", "Burung", "Pohon", "Bunga", "Daun", "Kuda", "Sapi", "Kambing", "Ikan", "Katak", "Kupu-kupu", "Belalang", "Lebah", "Ular", "Harimau", "Gajah", "Monyet", "Bambu", "Rumput", "Jamur", "Pisang", "Singkong", "Jagung", "Alang-alang", "Kelapa", "Mangga", "Petai", "Jengkol", "Cabai Rawit", "Kemiri"]
             },
             su: {
-                setupTitle: "Lebetkeun Nami Pamaén",
-                p1: "Pamaén 1 (Beureum)", p2: "Pamaén 2 (Konéng)", p3: "Pamaén 3 (Biru)", p4: "Pamaén 4 (Héjo)",
-                btnStart: "Ngawitan Ulin!",
-                errName: "Eusian heula sadaya nami pamaénna nya!",
-                turn: "Bagian:",
-                round: "Ronde",
-                btnRoll: "Alungkeun!",
-                resTitle: "Waktosna Nyarita!",
-                resSub: "Hayu susun carita tina gambar anu dipikaboga ku hidep!",
-                audioWelcome: "Wilujeng sumping di kaulinan Luncat! Lengkah Ulin Nyusun Carita. Mangga lebetkeun nami pamaén.",
-                audioTurnTemplate: (name) => `Bagian ${name}, hayu alungkeun daduna!`,
-                audioMoveTemplate: (num, itemName) => itemName ? `Hidep di kotak nomer ${num}. Kenging gambar ${itemName}.` : `Hidep di kotak nomer ${num}. Kotakna kosong.`,
-                audioEnd: "Kaulinan réngsé! Hore! Hayu caritakeun gambar anu dipikaboga ku hidep!",
+                sel_lang_audio: "Sampurasun! Wilujeng sumping di kaulinan Luncat! Mangga pilih basa nu badé dianggo ku hidep.",
+                input_names_title: "Lebetkeun Ngaran 4 Pamaén",
+                input_names_audio: "Sae pisan! Ayeuna, mangga lebetkeun ngaran opat pamaén.",
+                start_btn: "Mimitian Ulin",
+                turn: "Giliran",
+                round: "Putaran:",
+                roll_dice: "Kocok Dadu",
+                game_start_audio: "Hore, kaulinan dimimitian! Hayu urang ulin sasarengan. Giliran kahiji nyaéta",
+                turn_audio: "Giliran",
+                roll_audio: "Ngocok dadu!",
+                empty_box: "Kosong. Ieu kotak angka",
+                story_time_title: "Waktuna Nyarita!",
+                story_desc: "Hayu urang ngarang carita tina gambar nu dipanggihan!",
+                story_time_audio: "Kaulinan réngsé! Hébat sadayana! Ayeuna waktuna unggal pamaén nyarita ngagunakeun gambar nu geus dimeunangkeun.",
+                items: ["Ucing", "Hayam", "Manuk", "Tangkal", "Kembang", "Daun", "Kuda", "Sapi", "Embé", "Lauk", "Bangkong", "Kukupu", "Simeut", "Nyiruan", "Oray", "Maung", "Gajah", "Monyét", "Awi", "Jukut", "Suung", "Cau", "Sampeu", "Jagong", "Eurih", "Kalapa", "Manggah", "Peuteuy", "Jéngkol", "Céngék", "Muncang"]
             }
         };
 
-        // Fungsi mengubah angka ke pelafalan Sunda (agar TTS membaca dengan benar)
-        function getSundaNumber(n) {
-            const units = ['','hiji','dua','tilu','opat','lima','genep','tujuh','dalapan','salapan'];
-            if(n === 10) return 'sapuluh';
-            if(n === 11) return 'sabelas';
-            if(n > 11 && n < 20) return units[n%10] + ' belas';
-            if(n >= 20) {
-                let ten = units[Math.floor(n/10)] + ' puluh';
-                let unit = units[n%10];
-                return unit ? ten + ' ' + unit : ten;
-            }
-            return units[n];
-        }
-
-        // Data Gambar Lengkap 36 Kotak (Sebelum dikosongkan 5)
-        const allItems = [
-            { icon: '🐱', idName: 'kucing', suName: 'ucing' },
-            { icon: '🐶', idName: 'anjing', suName: 'anjing' },
-            { icon: '🐔', idName: 'ayam', suName: 'hayam' },
-            { icon: '🦆', idName: 'bebek', suName: 'meri' },
-            { icon: '🐮', idName: 'sapi', suName: 'sapi' },
-            { icon: '🐐', idName: 'kambing', suName: 'embé' },
-            { icon: '🐴', idName: 'kuda', suName: 'kuda' },
-            { icon: '🐦', idName: 'burung', suName: 'manuk' },
-            { icon: '🐟', idName: 'ikan', suName: 'lauk' },
-            { icon: '🍌', idName: 'pohon pisang', suName: 'tangkal cau' },
-            { icon: '🥥', idName: 'kelapa', suName: 'kalapa' },
-            { icon: '🌹', idName: 'bunga mawar', suName: 'kembang mawar' },
-            { icon: '🌼', idName: 'bunga melati', suName: 'kembang malati' },
-            { icon: '🥭', idName: 'mangga', suName: 'mangga' },
-            { icon: '🍈', idName: 'pepaya', suName: 'gedang' },
-            { icon: '🍠', idName: 'singkong', suName: 'sampeu' },
-            { icon: '🌾', idName: 'padi', suName: 'paré' },
-            { icon: '🎋', idName: 'bambu', suName: 'awi' },
-            { icon: '🦋', idName: 'kupu-kupu', suName: 'kukupu' },
-            { icon: '🐸', idName: 'katak', suName: 'bangkong' },
-            { icon: '🐍', idName: 'ular', suName: 'oray' },
-            { icon: '🐭', idName: 'tikus', suName: 'beurit' },
-            { icon: '🐒', idName: 'monyet', suName: 'monyét' },
-            { icon: '🐯', idName: 'harimau', suName: 'maung' },
-            { icon: '🐘', idName: 'gajah', suName: 'gajah' },
-            { icon: '🍃', idName: 'daun', suName: 'daun' },
-            { icon: '🌽', idName: 'jagung', suName: 'jagong' },
-            { icon: '🐰', idName: 'kelinci', suName: 'kelenci' },
-            { icon: '🐝', idName: 'lebah', suName: 'nyiruan' },
-            { icon: '🐜', idName: 'semut', suName: 'sireum' },
-            { icon: '🕷️', idName: 'laba-laba', suName: 'lancah' },
-            { icon: '🦉', idName: 'burung hantu', suName: 'bueuk' },
-            { icon: '🐌', idName: 'siput', suName: 'kéong' },
-            { icon: '🌺', idName: 'bunga sepatu', suName: 'kembang sapatu' },
-            { icon: '🍅', idName: 'tomat', suName: 'tomat' },
-            { icon: '🌲', idName: 'pohon cemara', suName: 'tangkal camara' }
-        ];
-
-        let lang = 'id'; 
-        let cells = [];
+        let selectedLang = 'id';
         let players = [];
         let currentPlayerIndex = 0;
-        let currentRound = 1;
-        const maxRounds = 2; // Hanya 2 putaran sesuai request
-        let isMoving = false;
+        let turnsPlayed = [0, 0, 0, 0];
+        const MAX_TURNS = 3; 
+        let playerPositions = [0, 0, 0, 0];
+        let playerItems = [[], [], [], []];
+        let emptyBoxes = [];
+        let boardMap = {}; 
 
-        // Inisialisasi Audio Engine
-        const synth = window.speechSynthesis;
+        const avatars = [
+            { bg: "bg-red-500", border: "border-red-500", text: "text-white", emoji: "👦🏻" },
+            { bg: "bg-blue-500", border: "border-blue-500", text: "text-white", emoji: "👦🏻" },
+            { bg: "bg-yellow-400", border: "border-yellow-400", text: "text-black", emoji: "👧🏻" },
+            { bg: "bg-green-500", border: "border-green-500", text: "text-white", emoji: "👧🏻" }
+        ];
+
+        let speechSynth = window.speechSynthesis;
+
+        // Fungsi membaca teks (Text-To-Speech) khusus anak
         function speak(text) {
-            if (synth.speaking) synth.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Gunakan engine ID agar pelafalan jelas
-            utterance.rate = 0.85; // Diperlambat sedikit untuk anak-anak
-            synth.speak(utterance);
+            if (speechSynth.speaking) {
+                speechSynth.cancel(); 
+            }
+            let msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'id-ID'; // Gunakan engine ID agar pelafalan ejaan stabil
+            msg.pitch = 1.4; // Suara melengking mirip anak-anak
+            msg.rate = 0.9;  // Tempo bicara sedikit diperlambat agar jelas
+            speechSynth.speak(msg);
         }
 
-        // Set Bahasa dan Putar Musik
-        function setLanguage(selectedLang) {
-            lang = selectedLang;
+        // Konversi angka ke ejaan teks bahasa Sunda (agar TTS membaca dengan benar)
+        function speakNumber(num, lang) {
+            if (lang === 'id') return num.toString();
+            const sundaNums = ["", "Hiji", "Dua", "Tilu", "Opat", "Lima", "Genep", "Tujuh", "Dalapan", "Salapan", "Sapuluh", "Sabelas", "Dua belas", "Tilu belas", "Opat belas", "Lima belas", "Genep belas", "Tujuh belas", "Dalapan belas", "Salapan belas", "Dua puluh", "Dua puluh hiji", "Dua puluh dua", "Dua puluh tilu", "Dua puluh opat", "Dua puluh lima", "Dua puluh genep", "Dua puluh tujuh", "Dua puluh dalapan", "Dua puluh salapan", "Tilu puluh", "Tilu puluh hiji", "Tilu puluh dua", "Tilu puluh tilu", "Tilu puluh opat", "Tilu puluh lima", "Tilu puluh genep"];
+            return sundaNums[num] || num.toString();
+        }
+
+        function getEmoji(word) {
+            const emojis = {
+                "Kucing": "🐱", "Ucing": "🐱", "Ayam": "🐔", "Hayam": "🐔", "Burung": "🐦", "Manuk": "🐦",
+                "Pohon": "🌳", "Tangkal": "🌳", "Bunga": "🌸", "Kembang": "🌸", "Daun": "🍃",
+                "Kuda": "🐴", "Sapi": "🐮", "Kambing": "🐐", "Embé": "🐐", "Ikan": "🐟", "Lauk": "🐟",
+                "Katak": "🐸", "Bangkong": "🐸", "Kupu-kupu": "🦋", "Kukupu": "🦋", "Belalang": "🦗", "Simeut": "🦗",
+                "Lebah": "🐝", "Nyiruan": "🐝", "Ular": "🐍", "Oray": "🐍", "Harimau": "🐯", "Maung": "🐯",
+                "Gajah": "🐘", "Monyet": "🐵", "Monyét": "🐵", "Bambu": "🎋", "Awi": "🎋", "Rumput": "🌱", "Jukut": "🌱",
+                "Jamur": "🍄", "Suung": "🍄", "Pisang": "🍌", "Cau": "🍌", "Singkong": "🍠", "Sampeu": "🍠",
+                "Jagung": "🌽", "Jagong": "🌽", "Alang-alang": "🌾", "Eurih": "🌾", "Kelapa": "🥥", "Kalapa": "🥥",
+                "Mangga": "🥭", "Manggah": "🥭", "Petai": "🫘", "Peuteuy": "🫘", "Jengkol": "🌰", "Jéngkol": "🌰",
+                "Cabai Rawit": "🌶️", "Céngék": "🌶️", "Kemiri": "🥜", "Muncang": "🥜"
+            };
+            return emojis[word] || "🎁";
+        }
+
+        // 1. Pilih Bahasa
+        function selectLanguage(lang) {
+            selectedLang = lang;
+            document.getElementById('lang-screen').classList.add('hidden');
+            document.getElementById('name-screen').classList.remove('hidden');
             
-            // Putar BGM
-            const bgm = document.getElementById('bgm');
-            bgm.volume = 0.2; // Suara latar pelan agar instruksi jelas
-            bgm.play().catch(e => console.log("Audio play diizinkan setelah interaksi"));
+            // Putar musik latar
+            let bgm = document.getElementById('bgm');
+            bgm.volume = 0.2;
+            bgm.play().catch(e => console.log("Musik diblokir otomatis oleh browser"));
 
-            // Ubah Teks UI Setup
-            document.getElementById('setup-title').innerText = dict[lang].setupTitle;
-            document.getElementById('p1-name').placeholder = dict[lang].p1;
-            document.getElementById('p2-name').placeholder = dict[lang].p2;
-            document.getElementById('p3-name').placeholder = dict[lang].p3;
-            document.getElementById('p4-name').placeholder = dict[lang].p4;
-            document.getElementById('btn-start').innerText = dict[lang].btnStart;
-
-            // Sapaan
-            speak(dict[lang].audioWelcome);
-
-            // Pindah Layar
-            document.getElementById('screen-language').classList.add('hidden');
-            document.getElementById('screen-setup').classList.remove('hidden');
+            // Terjemahkan Teks UI
+            document.getElementById('name-title').innerText = dict[lang].input_names_title;
+            document.getElementById('btn-start').innerText = dict[lang].start_btn;
+            
+            speak(dict[lang].input_names_audio);
         }
 
+        // 2. Mulai Permainan
         function startGame() {
-            const p1 = document.getElementById('p1-name').value.trim();
-            const p2 = document.getElementById('p2-name').value.trim();
-            const p3 = document.getElementById('p3-name').value.trim();
-            const p4 = document.getElementById('p4-name').value.trim();
-            const errMsg = document.getElementById('error-msg');
+            let p1 = document.getElementById('p1').value.trim() || "Pemain 1";
+            let p2 = document.getElementById('p2').value.trim() || "Pemain 2";
+            let p3 = document.getElementById('p3').value.trim() || "Pemain 3";
+            let p4 = document.getElementById('p4').value.trim() || "Pemain 4";
 
-            if (!p1 || !p2 || !p3 || !p4) {
-                errMsg.innerText = dict[lang].errName;
-                errMsg.classList.remove('hidden');
-                speak(dict[lang].errName);
-                return;
+            players = [ {name: p1}, {name: p2}, {name: p3}, {name: p4} ];
+
+            document.getElementById('name-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            document.getElementById('lbl-putaran').innerText = dict[selectedLang].round;
+            document.getElementById('btn-roll').innerText = dict[selectedLang].roll_dice;
+
+            setupBoard();
+            
+            // Tampilkan pion di luar kotak (persiapan masuk)
+            for(let i=0; i<4; i++) {
+                document.getElementById(`pion-${i}`).classList.remove('hidden');
             }
 
-            players = [
-                { id: 1, name: p1, avatar: '👦🏻', color: 'red', position: 0, items: [] },
-                { id: 2, name: p2, avatar: '👧🏻', color: 'yellow', position: 0, items: [] },
-                { id: 3, name: p3, avatar: '👦🏻', color: 'blue', position: 0, items: [] },
-                { id: 4, name: p4, avatar: '👧🏻', color: 'green', position: 0, items: [] }
-            ];
-
-            generateBoard();
-            
-            // Ubah UI Game
-            document.getElementById('btn-roll').innerText = dict[lang].btnRoll;
-            
-            document.getElementById('screen-setup').classList.add('hidden');
-            document.getElementById('screen-game').classList.remove('hidden');
-            document.getElementById('screen-game').classList.add('flex');
-
-            updateUI();
-            announceTurn();
+            updateTurnUI();
+            speak(dict[selectedLang].game_start_audio + " " + players[0].name);
         }
 
-        function generateBoard() {
-            // Acak 5 kotak kosong
-            let emptyIndices = [];
-            while(emptyIndices.length < 5) {
-                let r = Math.floor(Math.random() * 36);
-                if(!emptyIndices.includes(r)) emptyIndices.push(r);
+        // 3. Buat Papan Game (36 Kotak Zig-Zag)
+        function setupBoard() {
+            emptyBoxes = [];
+            while(emptyBoxes.length < 5) {
+                let r = Math.floor(Math.random() * 36) + 1;
+                if(!emptyBoxes.includes(r)) emptyBoxes.push(r);
             }
-
-            cells = allItems.map((item, index) => {
-                if(emptyIndices.includes(index)) {
-                    return { icon: '', idName: '', suName: '' }; // Dikosongkan
+            
+            let itemsCopy = [...dict[selectedLang].items];
+            let boardHTML = "";
+            
+            for(let row = 5; row >= 0; row--) {
+                for(let col = 0; col < 6; col++) {
+                    let isEvenRow = row % 2 === 0;
+                    let actualCol = isEvenRow ? col : (5 - col);
+                    let num = row * 6 + actualCol + 1;
+                    
+                    let itemStr = "";
+                    let itemEmoji = "";
+                    if(!emptyBoxes.includes(num)) {
+                        itemStr = itemsCopy.shift();
+                        boardMap[num] = itemStr;
+                        itemEmoji = getEmoji(itemStr);
+                    } else {
+                        boardMap[num] = null;
+                    }
+                    
+                    boardHTML += `<div id="box-${num}" class="border-2 border-yellow-400 bg-white/90 w-14 h-14 sm:w-20 sm:h-20 flex flex-col justify-center items-center relative rounded-md shadow-sm">
+                        <span class="absolute top-1 left-1 text-[10px] sm:text-xs font-bold text-gray-400">${num}</span>
+                        <span class="text-xl sm:text-3xl">${itemEmoji}</span>
+                        <span class="text-[8px] sm:text-[10px] font-bold mt-1 text-center leading-tight truncate w-full px-1 text-gray-700">${itemStr || ''}</span>
+                    </div>`;
                 }
-                return item;
-            });
-
-            const boardDiv = document.getElementById('board');
-            boardDiv.innerHTML = '';
-            
-            // Render 36 Kotak (Zig-zag)
-            for (let i = 36; i >= 1; i--) {
-                let row = Math.ceil(i / 6);
-                let col = i % 6 === 0 ? 6 : i % 6;
-                let actualNum = i;
-                if (row % 2 === 0) actualNum = (row * 6) - col + 1;
-
-                let cellData = cells[actualNum - 1];
-                let displayName = lang === 'id' ? cellData.idName : cellData.suName;
-
-                let cellEl = document.createElement('div');
-                cellEl.className = 'board-cell';
-                cellEl.id = `cell-${actualNum}`;
-                cellEl.innerHTML = `
-                    <span class="cell-number">${actualNum}</span>
-                    <span class="cell-emoji">${cellData.icon}</span>
-                    <span class="cell-name">${displayName}</span>
-                `;
-                boardDiv.appendChild(cellEl);
             }
-
-            // Letakkan pion di luar (posisi 0 - disembunyikan sementara)
-            players.forEach((p, i) => {
-                let pawn = document.createElement('div');
-                pawn.className = `pawn pawn-${i}`;
-                pawn.id = `pawn-${p.id}`;
-                pawn.innerText = p.avatar;
-                pawn.style.display = 'none';
-                boardDiv.appendChild(pawn);
-            });
+            document.getElementById('board').innerHTML = boardHTML;
         }
 
-        function announceTurn() {
-            const player = players[currentPlayerIndex];
-            const text = dict[lang].audioTurnTemplate(player.name);
-            document.getElementById('instruction-text').innerText = text;
-            speak(text);
+        function updateTurnUI() {
+            let pName = players[currentPlayerIndex].name;
+            let pBg = avatars[currentPlayerIndex].bg;
+            let pText = avatars[currentPlayerIndex].text;
+            
+            let turnIndicator = document.getElementById('turn-indicator');
+            turnIndicator.innerHTML = `${dict[selectedLang].turn}: <span class="${pBg} ${pText} px-3 py-1 rounded-xl ml-2 shadow-md flex items-center gap-1">${pName} ${avatars[currentPlayerIndex].emoji}</span>`;
+            
+            let currentRound = turnsPlayed[currentPlayerIndex] + 1;
+            if(currentRound > MAX_TURNS) currentRound = MAX_TURNS;
+            document.getElementById('turn-count').innerText = currentRound;
+            
+            let btnRoll = document.getElementById('btn-roll');
+            btnRoll.disabled = false;
+            btnRoll.classList.remove('opacity-50', 'cursor-not-allowed');
         }
 
+        // 4. Proses Kocok Dadu
         function rollDice() {
-            if (isMoving) return;
-            isMoving = true;
+            if(turnsPlayed[currentPlayerIndex] >= MAX_TURNS) return;
             
-            const diceDiv = document.getElementById('dice-display');
-            diceDiv.classList.add('dice-anim');
+            let btnRoll = document.getElementById('btn-roll');
+            btnRoll.disabled = true;
+            btnRoll.classList.add('opacity-50', 'cursor-not-allowed');
             
-            // Angka dadu Sunda
-            const diceSu = ['','hiji','dua','tilu','opat','lima','genep'];
+            let diceEl = document.getElementById('dice');
+            let rolls = 0;
             
-            setTimeout(() => {
-                diceDiv.classList.remove('dice-anim');
-                const roll = Math.floor(Math.random() * 6) + 1;
-                
-                // Set dadu visual
-                const diceIcons = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
-                diceDiv.innerText = diceIcons[roll];
-                
-                let textDadu = lang === 'id' ? `Dadu ${roll}.` : `Dadu ${diceSu[roll]}.`;
-                document.getElementById('instruction-text').innerText = textDadu;
-                speak(textDadu);
-
-                setTimeout(() => movePlayer(roll), 1500); // Tunggu ngomong dadu beres
-            }, 500);
-        }
-
-        function movePlayer(roll) {
-            let player = players[currentPlayerIndex];
-            player.position += roll;
-            if (player.position > 36) player.position = 36; // Mentok di 36
-
-            let pawn = document.getElementById(`pawn-${player.id}`);
-            pawn.style.display = 'block';
-
-            let targetCell = document.getElementById(`cell-${player.position}`);
-            let rectBoard = document.getElementById('board').getBoundingClientRect();
-            let rectCell = targetCell.getBoundingClientRect();
-
-            // Kalkulasi posisi absolut di dalam grid
-            let moveY = rectCell.top - rectBoard.top + 10;
-            let moveX = rectCell.left - rectBoard.left + 15;
+            speak(dict[selectedLang].roll_audio);
             
-            pawn.style.top = `${moveY}px`;
-            pawn.style.left = `${moveX}px`;
-
-            // Cek Hadiah
-            setTimeout(() => {
-                let cellData = cells[player.position - 1];
-                let hasItem = cellData.icon !== '';
-                let itemName = lang === 'id' ? cellData.idName : cellData.suName;
-                
-                if(hasItem) {
-                    player.items.push(cellData);
+            let interval = setInterval(() => {
+                diceEl.innerText = Math.floor(Math.random() * 6) + 1;
+                diceEl.style.transform = `rotate(${Math.random() * 360}deg)`;
+                rolls++;
+                if (rolls > 12) {
+                    clearInterval(interval);
+                    let finalDice = Math.floor(Math.random() * 6) + 1;
+                    diceEl.innerText = finalDice;
+                    diceEl.style.transform = `rotate(0deg)`;
+                    
+                    // Sebutkan angka dadu yang keluar
+                    speak(speakNumber(finalDice, selectedLang));
+                    
+                    setTimeout(() => {
+                        movePlayer(finalDice);
+                    }, 1200);
                 }
-
-                // Pengucapan
-                let numText = lang === 'id' ? player.position : getSundaNumber(player.position);
-                let textSpeak = dict[lang].audioMoveTemplate(numText, itemName);
-                
-                document.getElementById('instruction-text').innerText = textSpeak;
-                speak(textSpeak);
-
-                setTimeout(nextTurn, 4000); // Waktu cukup untuk narator ngomong
-            }, 600);
+            }, 80);
         }
 
-        function nextTurn() {
-            currentPlayerIndex++;
-            if (currentPlayerIndex >= players.length) {
-                currentPlayerIndex = 0;
-                currentRound++;
-            }
-
-            if (currentRound > maxRounds) {
-                endGame();
-            } else {
-                updateUI();
-                announceTurn();
-                isMoving = false;
-            }
-        }
-
-        function updateUI() {
-            const player = players[currentPlayerIndex];
-            const roundText = dict[lang].round;
-            const turnText = dict[lang].turn;
-
-            document.getElementById('round-indicator').innerText = `${roundText} ${currentRound} / ${maxRounds}`;
-            document.getElementById('turn-indicator').innerText = `${turnText} ${player.name} ${player.avatar}`;
+        // 5. Pergerakan Pion dan Ambil Gambar
+        function movePlayer(dice) {
+            let newPos = playerPositions[currentPlayerIndex] + dice;
+            if (newPos > 36) newPos = 36;
+            playerPositions[currentPlayerIndex] = newPos;
             
-            // Ubah warna teks giliran sesuai warna pemain
-            const colors = {'red':'text-red-600', 'yellow':'text-yellow-500', 'blue':'text-blue-600', 'green':'text-green-600'};
-            document.getElementById('turn-indicator').className = `font-title text-lg md:text-2xl ${colors[player.color]}`;
-        }
-
-        function endGame() {
-            document.getElementById('screen-game').classList.add('hidden');
-            document.getElementById('screen-game').classList.remove('flex');
-            document.getElementById('screen-result').classList.remove('hidden');
-
-            document.getElementById('result-title').innerText = dict[lang].resTitle;
-            document.getElementById('result-subtitle').innerText = dict[lang].resSub;
-
-            const container = document.getElementById('result-cards');
-            container.innerHTML = '';
-
-            const bgColors = {'red':'bg-red-100 border-red-300', 'yellow':'bg-yellow-100 border-yellow-300', 'blue':'bg-blue-100 border-blue-300', 'green':'bg-green-100 border-green-300'};
-
-            players.forEach(p => {
-                let itemsHtml = '';
-                if(p.items.length === 0) {
-                    itemsHtml = `<p class="text-sm text-gray-500 mt-2">Tidak dapat gambar</p>`;
+            // Pindahkan elemen pion ke dalam kotak grid
+            let box = document.getElementById(`box-${newPos}`);
+            let pionEl = document.getElementById(`pion-${currentPlayerIndex}`);
+            if(box) {
+                box.appendChild(pionEl);
+            }
+            
+            // Audio Kotak Tujuan
+            setTimeout(() => {
+                let numText = speakNumber(newPos, selectedLang);
+                let isTempEmpty = emptyBoxes.includes(newPos);
+                
+                if (isTempEmpty) {
+                    speak(`${dict[selectedLang].empty_box} ${numText}`);
                 } else {
-                    p.items.forEach(item => {
-                        let name = lang === 'id' ? item.idName : item.suName;
-                        itemsHtml += `<div class="bg-white p-2 rounded shadow text-center m-1 inline-block">
-                            <div class="text-3xl">${item.icon}</div>
-                            <div class="text-xs font-bold capitalize mt-1">${name}</div>
-                        </div>`;
-                    });
+                    let item = boardMap[newPos];
+                    speak(`${numText}. ${item}`);
+                    playerItems[currentPlayerIndex].push(item);
                 }
+                
+                // Jeda sebelum pergantian pemain
+                setTimeout(() => {
+                    turnsPlayed[currentPlayerIndex]++;
+                    
+                    if(turnsPlayed.every(t => t >= MAX_TURNS)) {
+                        endGame();
+                    } else {
+                        currentPlayerIndex = (currentPlayerIndex + 1) % 4;
+                        updateTurnUI();
+                        speak(dict[selectedLang].turn_audio + " " + players[currentPlayerIndex].name);
+                    }
+                }, 3500); 
+            }, 1000);
+        }
 
-                container.innerHTML += `
-                    <div class="border-2 rounded-xl p-4 text-left ${bgColors[p.color]}">
-                        <div class="text-xl font-title text-gray-800 border-b-2 border-white pb-2 mb-2">
-                            ${p.avatar} ${p.name}
-                        </div>
-                        <div class="flex flex-wrap">
-                            ${itemsHtml}
+        // 6. Akhir Permainan (Sesi Nyarita)
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            document.getElementById('story-title').innerText = dict[selectedLang].story_time_title;
+            document.getElementById('story-desc').innerText = dict[selectedLang].story_desc;
+            speak(dict[selectedLang].story_time_audio);
+            
+            let resultGrid = document.getElementById('result-grid');
+            resultGrid.innerHTML = "";
+            
+            for(let i=0; i<4; i++) {
+                let pName = players[i].name;
+                let items = playerItems[i];
+                let pBg = avatars[i].bg;
+                let pText = avatars[i].text;
+                let pBorder = avatars[i].border;
+                
+                let itemsHTML = items.map(item => `
+                    <div class="bg-white p-3 rounded-2xl text-center shadow-sm border-2 border-gray-100 flex flex-col items-center justify-center">
+                        <div class="text-4xl sm:text-5xl mb-2">${getEmoji(item)}</div>
+                        <div class="font-bold text-sm sm:text-base text-gray-800">${item}</div>
+                    </div>
+                `).join('');
+                
+                if(items.length === 0) {
+                     itemsHTML = `<div class="col-span-3 text-gray-500 italic text-sm py-4">Kosong (Hanya mendarat di kotak angka)</div>`;
+                }
+                
+                resultGrid.innerHTML += `
+                    <div class="bg-gray-50 p-5 rounded-3xl shadow-md border-l-8 ${pBorder}">
+                        <h3 class="text-xl font-bold mb-4 ${pBg} ${pText} inline-block px-5 py-2 rounded-full shadow-sm">
+                            ${pName} ${avatars[i].emoji}
+                        </h3>
+                        <div class="grid grid-cols-3 gap-3 justify-center">
+                            ${itemsHTML}
                         </div>
                     </div>
                 `;
-            });
-
-            speak(dict[lang].audioEnd);
+            }
         }
+        
+        // Membantu interaksi awal audio
+        document.body.addEventListener('click', function() {
+            if (speechSynth.state === 'suspended') {
+                speechSynth.resume();
+            }
+        }, { once: true });
     </script>
 </body>
 </html>
