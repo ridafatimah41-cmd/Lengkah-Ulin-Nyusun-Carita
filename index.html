@@ -6,410 +6,709 @@
     <title>LUNCAT - Lengkah Ulin Nyusun Carita</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .grid-board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
-        .pion { position: absolute; width: 26px; height: 26px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); border: 2px solid white; transition: all 0.5s ease-in-out; z-index: 20; }
-        .pion-0 { bottom: 2px; left: 2px; }
-        .pion-1 { bottom: 2px; right: 2px; }
-        .pion-2 { top: 2px; left: 2px; }
-        .pion-3 { top: 2px; right: 2px; }
-        /* Animasi masuk */
-        .fade-in { animation: fadeIn 0.5s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #e0f2fe;
+            background-image: radial-gradient(#bae6fd 2px, transparent 2px);
+            background-size: 30px 30px;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .heading-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            width: 100%;
+            max-width: 600px;
+            background: #ffffff;
+            padding: 8px;
+            border-radius: 1.5rem;
+            border: 6px solid #fcd34d;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .board-cell {
+            aspect-ratio: 1 / 1;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 2px;
+            overflow: hidden;
+        }
+
+        .board-cell:nth-child(even) { background-color: #f1f5f9; }
+        .cell-empty { background-color: #e2e8f0 !important; border-color: #cbd5e1 !important; }
+
+        .cell-num {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.8rem;
+            font-weight: 900;
+            color: #94a3b8;
+            z-index: 5;
+        }
+
+        .cell-emoji {
+            font-size: 1.6rem;
+            margin-top: 10px;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+            z-index: 2;
+        }
+
+        .cell-text {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #475569;
+            text-align: center;
+            line-height: 1.1;
+            text-transform: capitalize;
+            z-index: 2;
+        }
+
+        .pion-container {
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2px;
+            z-index: 10;
+        }
+
+        .pion {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 2px solid white;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .bounce { animation: bouncy 2s infinite; }
+        @keyframes bouncy {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .dice-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-10deg); }
+            20%, 80% { transform: translate3d(4px, 0, 0) rotate(10deg); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-15deg); }
+            40%, 60% { transform: translate3d(6px, 0, 0) rotate(15deg); }
+        }
+
+        .pop-in { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 600px) {
+            .cell-emoji { font-size: 1.2rem; margin-top: 12px; }
+            .cell-text { font-size: 0.5rem; }
+            .pion { width: 16px; height: 16px; font-size: 9px; border-width: 1px; }
+        }
     </style>
 </head>
-<body class="bg-sky-100 font-sans min-h-screen flex items-center justify-center p-4 selection:bg-none relative overflow-x-hidden">
+<body class="flex flex-col items-center min-h-screen py-6 px-4">
 
-    <!-- Musik Latar (Otomatis diputar saat bahasa dipilih) -->
-    <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_34b3e34b6b.mp3" loop preload="auto"></audio>
+    <!-- Audio BGM -->
+    <audio id="bgm" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_34b3e34b6b.mp3" type="audio/mpeg">
+    </audio>
 
-    <!-- 1. LAYAR PILIH BAHASA -->
-    <div id="lang-screen" class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-white fade-in">
-        <h1 class="text-5xl font-extrabold text-blue-600 mb-2 drop-shadow-sm">LUNCAT</h1>
-        <p class="text-gray-600 mb-8 font-semibold">Lengkah Ulin Nyusun Carita</p>
+    <header class="text-center mb-6">
+        <h1 class="text-5xl md:text-6xl heading-font text-sky-500 drop-shadow-lg tracking-wider bounce">LUNCAT!</h1>
+        <p class="text-lg md:text-xl font-bold text-pink-500 mt-2 bg-white/80 px-6 py-2 rounded-full shadow-sm inline-block">
+            Lengkah Ulin Nyusun Carita
+        </p>
+    </header>
+
+    <section id="screen-lang" class="w-full max-w-md bg-white p-8 rounded-[2rem] shadow-2xl border-b-8 border-sky-400 text-center fade-in">
+        <div class="text-7xl mb-4 bounce">🗣️</div>
+        <h2 class="text-2xl heading-font text-gray-800 mb-6">Pilih Bahasa / Pilih Basa</h2>
         
-        <h2 class="text-xl font-bold mb-6 text-gray-800">Pilih Bahasa / Pilih Basa</h2>
         <div class="flex flex-col gap-4">
-            <button onclick="selectLanguage('id')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-5 rounded-2xl shadow-[0_6px_0_rgb(185,28,28)] active:shadow-none active:translate-y-2 transition-all text-2xl flex items-center justify-center gap-3">
+            <button onclick="selectLang('id')" class="w-full bg-red-500 hover:bg-red-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#991b1b] active:translate-y-1 active:shadow-[0_2px_0_#991b1b] transition-all flex justify-center items-center gap-3">
                 <span>🇮🇩</span> Bahasa Indonesia
             </button>
-            <button onclick="selectLanguage('su')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-5 rounded-2xl shadow-[0_6px_0_rgb(21,128,61)] active:shadow-none active:translate-y-2 transition-all text-2xl flex items-center justify-center gap-3">
+            <button onclick="selectLang('su')" class="w-full bg-green-500 hover:bg-green-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#166534] active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all flex justify-center items-center gap-3">
                 <span>🌿</span> Basa Sunda
             </button>
         </div>
-    </div>
+    </section>
 
-    <!-- 2. LAYAR INPUT NAMA -->
-    <div id="name-screen" class="hidden bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-yellow-300 fade-in">
-        <h2 id="name-title" class="text-2xl font-extrabold mb-6 text-gray-800">Masukkan Nama 4 Pemain</h2>
-        <div class="flex flex-col gap-4 mb-8">
-            <input type="text" id="p1" placeholder="Pemain 1 (Anak Laki-Laki Merah)" class="border-4 border-red-300 p-3 rounded-xl w-full focus:outline-none focus:border-red-500 font-bold text-center text-lg" />
-            <input type="text" id="p2" placeholder="Pemain 2 (Anak Laki-Laki Biru)" class="border-4 border-blue-300 p-3 rounded-xl w-full focus:outline-none focus:border-blue-500 font-bold text-center text-lg" />
-            <input type="text" id="p3" placeholder="Pemain 3 (Anak Perempuan Kuning)" class="border-4 border-yellow-300 p-3 rounded-xl w-full focus:outline-none focus:border-yellow-500 font-bold text-center text-lg" />
-            <input type="text" id="p4" placeholder="Pemain 4 (Anak Perempuan Hijau)" class="border-4 border-green-300 p-3 rounded-xl w-full focus:outline-none focus:border-green-500 font-bold text-center text-lg" />
+    <section id="screen-names" class="w-full max-w-md bg-white p-8 rounded-[2rem] shadow-2xl border-b-8 border-pink-400 text-center hidden fade-in">
+        <h2 id="lbl-title-names" class="text-2xl heading-font text-gray-800 mb-6">Masukkan Nama 4 Pemain</h2>
+        
+        <div id="error-msg" class="hidden bg-red-100 text-red-600 font-bold p-2 rounded-lg mb-4 text-sm border-2 border-red-300">
+            Harap isi semua nama pemain!
         </div>
-        <button onclick="startGame()" id="btn-start" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-[0_6px_0_rgb(29,78,216)] active:shadow-none active:translate-y-2 transition-all text-2xl">
-            Mulai Bermain
+
+        <div class="space-y-4 mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-red-500 border-2 border-red-200 flex items-center justify-center text-2xl shadow-sm">👦🏻</div>
+                <input type="text" id="p1" placeholder="Pemain 1 (Merah)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-red-400 outline-none w-full">
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-blue-500 border-2 border-blue-200 flex items-center justify-center text-2xl shadow-sm">👦🏻</div>
+                <input type="text" id="p2" placeholder="Pemain 2 (Biru)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-blue-400 outline-none w-full">
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-yellow-400 border-2 border-yellow-200 flex items-center justify-center text-2xl shadow-sm">👧🏻</div>
+                <input type="text" id="p3" placeholder="Pemain 3 (Kuning)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-yellow-400 outline-none w-full">
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-green-500 border-2 border-green-200 flex items-center justify-center text-2xl shadow-sm">👧🏻</div>
+                <input type="text" id="p4" placeholder="Pemain 4 (Hijau)" class="flex-1 bg-gray-50 border-4 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-green-400 outline-none w-full">
+            </div>
+        </div>
+        
+        <button onclick="startGame()" id="btn-start" class="w-full bg-sky-500 hover:bg-sky-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#0284c7] active:translate-y-1 active:shadow-[0_2px_0_#0284c7] transition-all">
+            Mulai!
         </button>
-    </div>
+    </section>
 
-    <!-- 3. LAYAR PAPAN PERMAINAN -->
-    <div id="game-screen" class="hidden flex-col items-center w-full max-w-2xl bg-white p-4 sm:p-6 rounded-3xl shadow-2xl border-4 border-yellow-400 fade-in">
+    <section id="screen-game" class="w-full max-w-5xl hidden flex-col lg:flex-row gap-6 items-center lg:items-start justify-center fade-in">
         
-        <!-- Info Giliran -->
-        <div class="flex justify-between w-full mb-4 items-center bg-blue-50 p-3 rounded-2xl border-2 border-blue-200">
-            <div id="turn-indicator" class="text-lg sm:text-xl font-extrabold text-blue-700 flex items-center gap-2"></div>
-            <div class="bg-white px-4 py-1 rounded-full shadow-sm border border-gray-200 text-sm sm:text-base font-bold text-gray-600">
-                <span id="lbl-putaran">Putaran:</span> <span id="turn-count" class="text-blue-600 text-lg">1</span>/3
+        <!-- Panel Kontrol & Status -->
+        <div class="w-full lg:w-72 flex flex-col gap-4">
+            <div class="bg-white p-5 rounded-[2rem] shadow-xl border-b-8 border-sky-400 text-center">
+                <div class="inline-block bg-sky-100 text-sky-700 px-4 py-1 rounded-full font-bold text-sm mb-3">
+                    <span id="lbl-round-text">Putaran</span> <span id="val-round">1</span> / 3
+                </div>
+                
+                <h3 id="lbl-turn-text" class="text-sm font-bold text-gray-500 mb-1">Giliran:</h3>
+                <div class="flex items-center justify-center gap-3 mb-6">
+                    <div id="active-avatar" class="w-14 h-14 rounded-full border-4 shadow-sm flex items-center justify-center text-3xl bg-gray-200">?</div>
+                    <h2 id="active-name" class="text-2xl heading-font text-gray-700 truncate max-w-[120px]">Nama</h2>
+                </div>
+                
+                <div class="flex flex-col items-center gap-4">
+                    <div id="dice" class="w-24 h-24 bg-white border-8 border-gray-200 rounded-2xl flex items-center justify-center text-5xl heading-font shadow-inner text-gray-700 transition-all select-none">
+                        🎲
+                    </div>
+                    <button id="btn-roll" onclick="rollDice()" class="w-full bg-amber-400 hover:bg-amber-500 text-amber-900 heading-font text-xl py-3 rounded-xl shadow-[0_6px_0_#b45309] active:translate-y-1 active:shadow-[0_2px_0_#b45309] transition-all uppercase">
+                        Kocok Dadu
+                    </button>
+                </div>
+            </div>
+            
+            <div class="hidden lg:block bg-white p-4 rounded-[2rem] shadow-xl border-b-8 border-gray-200">
+                <h3 id="lbl-bag-text" class="text-sm heading-font text-gray-500 text-center mb-2">Kantong Pemain</h3>
+                <div id="bag-desktop" class="space-y-2"></div>
             </div>
         </div>
-        
-        <!-- Papan Grid -->
-        <div class="bg-sky-200 p-2 sm:p-3 rounded-2xl w-full max-w-fit shadow-inner mb-6 relative">
-            <div id="board" class="grid-board relative"></div>
-            <!-- Pion-pion -->
-            <div id="pion-0" class="pion bg-red-500 text-white shadow-lg hidden">👦🏻</div>
-            <div id="pion-1" class="pion bg-blue-500 text-white shadow-lg hidden">👦🏻</div>
-            <div id="pion-2" class="pion bg-yellow-400 text-black shadow-lg hidden">👧🏻</div>
-            <div id="pion-3" class="pion bg-green-500 text-white shadow-lg hidden">👧🏻</div>
+
+        <!-- Area Board/Papan -->
+        <div class="w-full lg:w-auto flex justify-center">
+            <div id="board" class="board-container relative"></div>
         </div>
 
-        <!-- Dadu & Tombol Kocok -->
-        <div class="flex flex-col items-center w-full bg-gray-50 p-4 rounded-2xl border-2 border-dashed border-gray-300">
-            <div id="dice" class="w-20 h-20 bg-white border-4 border-gray-800 rounded-2xl shadow-lg flex justify-center items-center text-4xl mb-4 font-bold text-gray-800 transition-transform duration-300">
-                🎲
+        <!-- Kantong Mobile -->
+        <div class="block lg:hidden w-full bg-white p-4 rounded-3xl shadow-xl border-b-8 border-gray-200 mt-2">
+            <h3 id="lbl-bag-mobile-text" class="text-sm heading-font text-gray-500 text-center mb-2">Kantong Pemain</h3>
+            <div id="bag-mobile" class="grid grid-cols-2 gap-2"></div>
+        </div>
+    </section>
+
+    <section id="screen-result" class="w-full max-w-4xl hidden flex-col items-center text-center fade-in">
+        <h2 id="lbl-result-title" class="text-4xl md:text-5xl heading-font text-amber-500 drop-shadow-md mb-2 bounce">Waktunya Bercerita!</h2>
+        <p id="lbl-result-desc" class="text-lg font-bold text-gray-600 mb-8 bg-white px-6 py-2 rounded-full shadow-sm border-2 border-amber-200">
+            Ayo buat cerita lucu dari gambar yang kamu kumpulkan!
+        </p>
+
+        <div id="result-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full mb-10"></div>
+
+        <button onclick="location.reload()" id="btn-restart" class="bg-pink-500 hover:bg-pink-600 text-white heading-font text-2xl py-4 px-10 rounded-2xl shadow-[0_8px_0_#be185d] active:translate-y-2 active:shadow-[0_2px_0_#be185d] transition-all">
+            Main Lagi
+        </button>
+    </section>
+
+    <div id="modal-interaction" class="fixed inset-0 bg-slate-900 bg-opacity-80 z-50 hidden flex items-center justify-center backdrop-blur-sm px-4">
+        <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl text-center border-[8px] border-amber-400 pop-in max-w-sm w-full relative">
+            
+            <h3 id="modal-title" class="text-3xl heading-font text-sky-500 mb-2 bounce">Sebutkan!</h3>
+            
+            <div class="bg-sky-50 rounded-3xl py-6 px-4 mb-6 border-4 border-sky-100 shadow-inner relative mt-4">
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-amber-400 text-amber-900 font-bold px-4 py-1 rounded-full border-4 border-white shadow-md">
+                    Kotak <span id="modal-box-num" class="text-xl">1</span>
+                </div>
+                
+                <!-- Area Tampilan Gambar & Teks -->
+                <div id="modal-content-hasitem">
+                    <div id="modal-emoji" class="text-[5rem] filter drop-shadow-lg mb-2">🐱</div>
+                    <div id="modal-word" class="text-3xl heading-font text-gray-700 capitalize">Kucing</div>
+                </div>
+
+                <!-- Area Tampilan Kotak Kosong -->
+                <div id="modal-content-empty" class="hidden">
+                    <div class="text-[5rem] filter grayscale opacity-40 mb-2">🫥</div>
+                    <div id="modal-empty-word" class="text-2xl heading-font text-gray-400">Kosong</div>
+                </div>
             </div>
-            <button id="btn-roll" onclick="rollDice()" class="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-extrabold py-3 px-10 rounded-full shadow-[0_6px_0_rgb(202,138,4)] active:shadow-none active:translate-y-2 transition-all text-2xl uppercase tracking-wider">
-                Kocok Dadu
+
+            <p id="modal-instruction-text" class="text-sm font-bold text-gray-500 mb-6 italic">
+                Ayo ucapkan dengan suara lantang!
+            </p>
+
+            <button onclick="closeModalAndContinue()" id="btn-lanjut" class="w-full bg-green-500 hover:bg-green-600 text-white heading-font text-2xl py-4 rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-1 active:shadow-[0_2px_0_#16a34a] transition-all">
+                Lanjut
             </button>
         </div>
     </div>
 
-    <!-- 4. LAYAR BERCERITA (HASIL AKHIR) -->
-    <div id="result-screen" class="hidden bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-3xl w-full text-center border-4 border-green-500 fade-in">
-        <h2 id="story-title" class="text-3xl sm:text-5xl font-extrabold text-green-600 mb-8 drop-shadow-sm">Waktunya Bercerita!</h2>
-        <p id="story-desc" class="text-lg font-semibold text-gray-600 mb-8"></p>
-        <div id="result-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
-        <button onclick="location.reload()" class="mt-8 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-[0_4px_0_rgb(29,78,216)] active:translate-y-1 transition-all text-xl">
-            Main Lagi
-        </button>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Data Bahasa dan Kosakata
+        // Data Kamus & Kosakata
         const dict = {
             id: {
-                sel_lang_audio: "Halo! Selamat datang di permainan Luncat! Pilih bahasa yang ingin kamu gunakan.",
-                input_names_title: "Masukkan Nama 4 Pemain",
-                input_names_audio: "Luar biasa! Sekarang, silakan minta guru atau orang tuamu memasukkan nama keempat pemain.",
-                start_btn: "Mulai Bermain",
+                title_names: "Masukkan Nama 4 Pemain",
+                btn_start: "Mulai Bermain!",
+                round: "Putaran",
                 turn: "Giliran",
-                round: "Putaran:",
-                roll_dice: "Kocok Dadu",
-                game_start_audio: "Hore, permainan dimulai! Ayo kita bermain. Giliran pertama adalah",
-                turn_audio: "Giliran",
-                roll_audio: "Mengocok dadu!",
-                empty_box: "Kosong. Ini kotak angka",
-                story_time_title: "Waktunya Bercerita!",
-                story_desc: "Ayo buat cerita lucu dari gambar yang kamu kumpulkan!",
-                story_time_audio: "Permainan selesai! Hebat semuanya! Sekarang waktunya setiap pemain bercerita menggunakan gambar yang sudah didapatkan.",
-                items: ["Kucing", "Ayam", "Burung", "Pohon", "Bunga", "Daun", "Kuda", "Sapi", "Kambing", "Ikan", "Katak", "Kupu-kupu", "Belalang", "Lebah", "Ular", "Harimau", "Gajah", "Monyet", "Bambu", "Rumput", "Jamur", "Pisang", "Singkong", "Jagung", "Alang-alang", "Kelapa", "Mangga", "Petai", "Jengkol", "Cabai Rawit", "Kemiri"]
+                btn_roll: "Kocok Dadu",
+                bag: "Kantong Pemain",
+                result_title: "Waktunya Bercerita! 📖",
+                result_desc: "Ayo buat cerita lucu dari gambar yang kamu kumpulkan!",
+                btn_restart: "Main Lagi",
+                modal_title: "Sebutkan!",
+                modal_empty: "Kosong",
+                modal_instruction: "Ayo ucapkan dengan suara lantang!",
+                btn_lanjut: "Lanjut",
+                
+                // Audio Prompts
+                audio_start: "Halo! Selamat datang di permainan Luncat. Silakan masukkan nama pemain.",
+                audio_begin_game: "Permainan dimulai! Giliran pertama adalah",
+                audio_roll: "Mengocok dadu!",
+                audio_prompt_item: "Ayo sebutkan angka dan gambar yang ada pada kotak!",
+                audio_prompt_empty: "Ayo sebutkan angka yang ada pada kotak!",
+                audio_end: "Permainan selesai! Hebat semuanya! Sekarang waktunya setiap pemain bercerita.",
+
+                vocab: [
+                    { name: "Kucing", emoji: "🐱" }, { name: "Ayam", emoji: "🐔" }, { name: "Burung", emoji: "🐦" },
+                    { name: "Pohon", emoji: "🌳" }, { name: "Bunga", emoji: "🌸" }, { name: "Daun", emoji: "🍃" },
+                    { name: "Kuda", emoji: "🐴" }, { name: "Sapi", emoji: "🐮" }, { name: "Kambing", emoji: "🐐" },
+                    { name: "Ikan", emoji: "🐟" }, { name: "Katak", emoji: "🐸" }, { name: "Kupu-kupu", emoji: "🦋" },
+                    { name: "Belalang", emoji: "🦗" }, { name: "Lebah", emoji: "🐝" }, { name: "Ular", emoji: "🐍" },
+                    { name: "Harimau", emoji: "🐯" }, { name: "Gajah", emoji: "🐘" }, { name: "Monyet", emoji: "🐵" },
+                    { name: "Bambu", emoji: "🎋" }, { name: "Rumput", emoji: "🌱" }, { name: "Jamur", emoji: "🍄" },
+                    { name: "Pisang", emoji: "🍌" }, { name: "Singkong", emoji: "🍠" }, { name: "Jagung", emoji: "🌽" },
+                    { name: "Kelapa", emoji: "🥥" }, { name: "Mangga", emoji: "🥭" }, { name: "Bintang", emoji: "⭐" },
+                    { name: "Bulan", emoji: "🌙" }, { name: "Matahari", emoji: "☀️" }, { name: "Awan", emoji: "☁️" },
+                    { name: "Hujan", emoji: "🌧️" }
+                ]
             },
             su: {
-                sel_lang_audio: "Sampurasun! Wilujeng sumping di kaulinan Luncat! Mangga pilih basa nu badé dianggo ku hidep.",
-                input_names_title: "Lebetkeun Ngaran 4 Pamaén",
-                input_names_audio: "Sae pisan! Ayeuna, mangga lebetkeun ngaran opat pamaén.",
-                start_btn: "Mimitian Ulin",
+                title_names: "Lebetkeun Ngaran 4 Pamaén",
+                btn_start: "Mimitian Ulin!",
+                round: "Putaran",
                 turn: "Giliran",
-                round: "Putaran:",
-                roll_dice: "Kocok Dadu",
-                game_start_audio: "Hore, kaulinan dimimitian! Hayu urang ulin sasarengan. Giliran kahiji nyaéta",
-                turn_audio: "Giliran",
-                roll_audio: "Ngocok dadu!",
-                empty_box: "Kosong. Ieu kotak angka",
-                story_time_title: "Waktuna Nyarita!",
-                story_desc: "Hayu urang ngarang carita tina gambar nu dipanggihan!",
-                story_time_audio: "Kaulinan réngsé! Hébat sadayana! Ayeuna waktuna unggal pamaén nyarita ngagunakeun gambar nu geus dimeunangkeun.",
-                items: ["Ucing", "Hayam", "Manuk", "Tangkal", "Kembang", "Daun", "Kuda", "Sapi", "Embé", "Lauk", "Bangkong", "Kukupu", "Simeut", "Nyiruan", "Oray", "Maung", "Gajah", "Monyét", "Awi", "Jukut", "Suung", "Cau", "Sampeu", "Jagong", "Eurih", "Kalapa", "Manggah", "Peuteuy", "Jéngkol", "Céngék", "Muncang"]
+                btn_roll: "Kocok Dadu",
+                bag: "Kantong Pamaén",
+                result_title: "Waktuna Nyarita! 📖",
+                result_desc: "Hayu urang ngarang carita tina gambar nu dipanggihan!",
+                btn_restart: "Ameng Deui",
+                modal_title: "Sebutkeun!",
+                modal_empty: "Kosong",
+                modal_instruction: "Hayu ucapkeun sing tarik sorana!",
+                btn_lanjut: "Teruskeun",
+
+                // Audio Prompts
+                audio_start: "Sampurasun! Wilujeng sumping di kaulinan Luncat. Mangga lebetkeun ngaran pamaén.",
+                audio_begin_game: "Kaulinan dimimitian! Giliran kahiji nyaéta",
+                audio_roll: "Ngocok dadu!",
+                audio_prompt_item: "Hayu sebutkeun angka jeung gambar nu aya dina kotak!",
+                audio_prompt_empty: "Hayu sebutkeun angka nu aya dina kotak!",
+                audio_end: "Kaulinan réngsé! Hébat sadayana! Ayeuna waktuna unggal pamaén nyarita.",
+
+                vocab: [
+                    { name: "Ucing", emoji: "🐱" }, { name: "Hayam", emoji: "🐔" }, { name: "Manuk", emoji: "🐦" },
+                    { name: "Tangkal", emoji: "🌳" }, { name: "Kembang", emoji: "🌸" }, { name: "Daun", emoji: "🍃" },
+                    { name: "Kuda", emoji: "🐴" }, { name: "Sapi", emoji: "🐮" }, { name: "Embé", emoji: "🐐" },
+                    { name: "Lauk", emoji: "🐟" }, { name: "Bangkong", emoji: "🐸" }, { name: "Kukupu", emoji: "🦋" },
+                    { name: "Simeut", emoji: "🦗" }, { name: "Nyiruan", emoji: "🐝" }, { name: "Oray", emoji: "🐍" },
+                    { name: "Maung", emoji: "🐯" }, { name: "Gajah", emoji: "🐘" }, { name: "Monyét", emoji: "🐵" },
+                    { name: "Awi", emoji: "🎋" }, { name: "Jukut", emoji: "🌱" }, { name: "Suung", emoji: "🍄" },
+                    { name: "Cau", emoji: "🍌" }, { name: "Sampeu", emoji: "🍠" }, { name: "Jagong", emoji: "🌽" },
+                    { name: "Kalapa", emoji: "🥥" }, { name: "Manggah", emoji: "🥭" }, { name: "Béntang", emoji: "⭐" },
+                    { name: "Bulan", emoji: "🌙" }, { name: "Panonpoé", emoji: "☀️" }, { name: "Méga", emoji: "☁️" },
+                    { name: "Hujan", emoji: "🌧️" }
+                ]
             }
         };
 
-        let selectedLang = 'id';
+        // State Variabel Game
+        let currentLang = 'id';
         let players = [];
-        let currentPlayerIndex = 0;
-        let turnsPlayed = [0, 0, 0, 0];
-        const MAX_TURNS = 3; 
-        let playerPositions = [0, 0, 0, 0];
-        let playerItems = [[], [], [], []];
-        let emptyBoxes = [];
-        let boardMap = {}; 
+        let currentPlayerIdx = 0;
+        const MAX_ROUNDS = 3;
+        const TOTAL_BOXES = 36;
+        let boardData = {}; 
+        let emptyBoxIndices = [];
+        let isAnimating = false;
+        let pendingLandedItem = null; 
 
         const avatars = [
-            { bg: "bg-red-500", border: "border-red-500", text: "text-white", emoji: "👦🏻" },
-            { bg: "bg-blue-500", border: "border-blue-500", text: "text-white", emoji: "👦🏻" },
-            { bg: "bg-yellow-400", border: "border-yellow-400", text: "text-black", emoji: "👧🏻" },
-            { bg: "bg-green-500", border: "border-green-500", text: "text-white", emoji: "👧🏻" }
+            { bg: "bg-red-500", border: "border-red-500", text: "text-red-600", emoji: "👦🏻" },
+            { bg: "bg-blue-500", border: "border-blue-500", text: "text-blue-600", emoji: "👦🏻" },
+            { bg: "bg-yellow-400", border: "border-yellow-400", text: "text-yellow-600", emoji: "👧🏻" },
+            { bg: "bg-green-500", border: "border-green-500", text: "text-green-600", emoji: "👧🏻" }
         ];
 
-        let speechSynth = window.speechSynthesis;
-
-        // Fungsi membaca teks (Text-To-Speech) khusus anak
+        let synth = window.speechSynthesis;
         function speak(text) {
-            if (speechSynth.speaking) {
-                speechSynth.cancel(); 
-            }
-            let msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'id-ID'; // Gunakan engine ID agar pelafalan ejaan stabil
-            msg.pitch = 1.4; // Suara melengking mirip anak-anak
-            msg.rate = 0.9;  // Tempo bicara sedikit diperlambat agar jelas
-            speechSynth.speak(msg);
+            if (synth.speaking) synth.cancel();
+            let utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID'; // Gunakan engine ID agar pelafalan huruf alfabet tetap stabil
+            utterance.pitch = 1.7; // Suara tinggi mirip anak-anak
+            utterance.rate = 0.9;
+            synth.speak(utterance);
         }
 
-        // Konversi angka ke ejaan teks bahasa Sunda (agar TTS membaca dengan benar)
-        function speakNumber(num, lang) {
-            if (lang === 'id') return num.toString();
-            const sundaNums = ["", "Hiji", "Dua", "Tilu", "Opat", "Lima", "Genep", "Tujuh", "Dalapan", "Salapan", "Sapuluh", "Sabelas", "Dua belas", "Tilu belas", "Opat belas", "Lima belas", "Genep belas", "Tujuh belas", "Dalapan belas", "Salapan belas", "Dua puluh", "Dua puluh hiji", "Dua puluh dua", "Dua puluh tilu", "Dua puluh opat", "Dua puluh lima", "Dua puluh genep", "Dua puluh tujuh", "Dua puluh dalapan", "Dua puluh salapan", "Tilu puluh", "Tilu puluh hiji", "Tilu puluh dua", "Tilu puluh tilu", "Tilu puluh opat", "Tilu puluh lima", "Tilu puluh genep"];
-            return sundaNums[num] || num.toString();
-        }
-
-        function getEmoji(word) {
-            const emojis = {
-                "Kucing": "🐱", "Ucing": "🐱", "Ayam": "🐔", "Hayam": "🐔", "Burung": "🐦", "Manuk": "🐦",
-                "Pohon": "🌳", "Tangkal": "🌳", "Bunga": "🌸", "Kembang": "🌸", "Daun": "🍃",
-                "Kuda": "🐴", "Sapi": "🐮", "Kambing": "🐐", "Embé": "🐐", "Ikan": "🐟", "Lauk": "🐟",
-                "Katak": "🐸", "Bangkong": "🐸", "Kupu-kupu": "🦋", "Kukupu": "🦋", "Belalang": "🦗", "Simeut": "🦗",
-                "Lebah": "🐝", "Nyiruan": "🐝", "Ular": "🐍", "Oray": "🐍", "Harimau": "🐯", "Maung": "🐯",
-                "Gajah": "🐘", "Monyet": "🐵", "Monyét": "🐵", "Bambu": "🎋", "Awi": "🎋", "Rumput": "🌱", "Jukut": "🌱",
-                "Jamur": "🍄", "Suung": "🍄", "Pisang": "🍌", "Cau": "🍌", "Singkong": "🍠", "Sampeu": "🍠",
-                "Jagung": "🌽", "Jagong": "🌽", "Alang-alang": "🌾", "Eurih": "🌾", "Kelapa": "🥥", "Kalapa": "🥥",
-                "Mangga": "🥭", "Manggah": "🥭", "Petai": "🫘", "Peuteuy": "🫘", "Jengkol": "🌰", "Jéngkol": "🌰",
-                "Cabai Rawit": "🌶️", "Céngék": "🌶️", "Kemiri": "🥜", "Muncang": "🥜"
-            };
-            return emojis[word] || "🎁";
-        }
-
-        // 1. Pilih Bahasa
-        function selectLanguage(lang) {
-            selectedLang = lang;
-            document.getElementById('lang-screen').classList.add('hidden');
-            document.getElementById('name-screen').classList.remove('hidden');
-            
-            // Putar musik latar
+        function playBGM() {
             let bgm = document.getElementById('bgm');
-            bgm.volume = 0.2;
-            bgm.play().catch(e => console.log("Musik diblokir otomatis oleh browser"));
-
-            // Terjemahkan Teks UI
-            document.getElementById('name-title').innerText = dict[lang].input_names_title;
-            document.getElementById('btn-start').innerText = dict[lang].start_btn;
-            
-            speak(dict[lang].input_names_audio);
+            bgm.volume = 0.3;
+            bgm.play().catch(e => console.log("BGM butuh interaksi user."));
         }
 
-        // 2. Mulai Permainan
+        function selectLang(lang) {
+            currentLang = lang;
+            
+            // Terapkan translasi UI Layar Input
+            document.getElementById('lbl-title-names').innerText = dict[lang].title_names;
+            document.getElementById('btn-start').innerText = dict[lang].btn_start;
+            
+            document.getElementById('screen-lang').classList.add('hidden');
+            document.getElementById('screen-names').classList.remove('hidden');
+            
+            playBGM();
+            speak(dict[lang].audio_start);
+        }
+
         function startGame() {
             let p1 = document.getElementById('p1').value.trim() || "Pemain 1";
             let p2 = document.getElementById('p2').value.trim() || "Pemain 2";
             let p3 = document.getElementById('p3').value.trim() || "Pemain 3";
             let p4 = document.getElementById('p4').value.trim() || "Pemain 4";
 
-            players = [ {name: p1}, {name: p2}, {name: p3}, {name: p4} ];
-
-            document.getElementById('name-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('game-screen').classList.add('flex');
-            document.getElementById('lbl-putaran').innerText = dict[selectedLang].round;
-            document.getElementById('btn-roll').innerText = dict[selectedLang].roll_dice;
-
-            setupBoard();
-            
-            // Tampilkan pion di luar kotak (persiapan masuk)
-            for(let i=0; i<4; i++) {
-                document.getElementById(`pion-${i}`).classList.remove('hidden');
+            // Pastikan semua diisi (opsional, tapi disarankan)
+            if(!document.getElementById('p1').value.trim() || !document.getElementById('p2').value.trim() || 
+               !document.getElementById('p3').value.trim() || !document.getElementById('p4').value.trim()){
+                document.getElementById('error-msg').classList.remove('hidden');
+                return;
             }
 
-            updateTurnUI();
-            speak(dict[selectedLang].game_start_audio + " " + players[0].name);
+            players = [
+                { id: 0, name: p1, pos: 0, rounds: 0, items: [] },
+                { id: 1, name: p2, pos: 0, rounds: 0, items: [] },
+                { id: 2, name: p3, pos: 0, rounds: 0, items: [] },
+                { id: 3, name: p4, pos: 0, rounds: 0, items: [] }
+            ];
+
+            // Translasi UI Layar Game & Hasil & Modal
+            const d = dict[currentLang];
+            document.getElementById('lbl-round-text').innerText = d.round;
+            document.getElementById('lbl-turn-text').innerText = d.turn + ":";
+            document.getElementById('btn-roll').innerText = d.btn_roll;
+            document.getElementById('lbl-bag-text').innerText = d.bag;
+            document.getElementById('lbl-bag-mobile-text').innerText = d.bag;
+            
+            document.getElementById('lbl-result-title').innerText = d.result_title;
+            document.getElementById('lbl-result-desc').innerText = d.result_desc;
+            document.getElementById('btn-restart').innerText = d.btn_restart;
+            
+            document.getElementById('modal-title').innerText = d.modal_title;
+            document.getElementById('modal-empty-word').innerText = d.modal_empty;
+            document.getElementById('modal-instruction-text').innerText = d.modal_instruction;
+            document.getElementById('btn-lanjut').innerText = d.btn_lanjut;
+
+            document.getElementById('screen-names').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('screen-game').classList.add('flex');
+
+            buildBoard();
+            updateUI();
+            
+            speak(d.audio_begin_game + " " + players[0].name);
         }
 
-        // 3. Buat Papan Game (36 Kotak Zig-Zag)
-        function setupBoard() {
-            emptyBoxes = [];
-            while(emptyBoxes.length < 5) {
-                let r = Math.floor(Math.random() * 36) + 1;
-                if(!emptyBoxes.includes(r)) emptyBoxes.push(r);
+        function buildBoard() {
+            // Pilih 5 kotak kosong secara acak
+            emptyBoxIndices = [];
+            while(emptyBoxIndices.length < 5) {
+                let r = Math.floor(Math.random() * TOTAL_BOXES) + 1;
+                if(!emptyBoxIndices.includes(r)) emptyBoxIndices.push(r);
             }
-            
-            let itemsCopy = [...dict[selectedLang].items];
-            let boardHTML = "";
-            
+
+            // Acak Kosakata
+            let shuffledVocab = [...dict[currentLang].vocab].sort(() => Math.random() - 0.5);
+            let vocabIdx = 0;
+
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            boardData = {};
+
+            // Render baris dari atas (baris 5) ke bawah (baris 0)
             for(let row = 5; row >= 0; row--) {
                 for(let col = 0; col < 6; col++) {
-                    let isEvenRow = row % 2 === 0;
+                    let isEvenRow = (row % 2 === 0);
                     let actualCol = isEvenRow ? col : (5 - col);
-                    let num = row * 6 + actualCol + 1;
-                    
-                    let itemStr = "";
-                    let itemEmoji = "";
-                    if(!emptyBoxes.includes(num)) {
-                        itemStr = itemsCopy.shift();
-                        boardMap[num] = itemStr;
-                        itemEmoji = getEmoji(itemStr);
-                    } else {
-                        boardMap[num] = null;
+                    let boxNum = row * 6 + actualCol + 1;
+
+                    let item = null;
+                    if(!emptyBoxIndices.includes(boxNum) && vocabIdx < shuffledVocab.length) {
+                        item = shuffledVocab[vocabIdx];
+                        vocabIdx++;
                     }
+                    boardData[boxNum] = item;
+
+                    let cellDiv = document.createElement('div');
+                    cellDiv.className = `board-cell ${item ? '' : 'cell-empty'}`;
+                    cellDiv.id = `box-${boxNum}`;
                     
-                    boardHTML += `<div id="box-${num}" class="border-2 border-yellow-400 bg-white/90 w-14 h-14 sm:w-20 sm:h-20 flex flex-col justify-center items-center relative rounded-md shadow-sm">
-                        <span class="absolute top-1 left-1 text-[10px] sm:text-xs font-bold text-gray-400">${num}</span>
-                        <span class="text-xl sm:text-3xl">${itemEmoji}</span>
-                        <span class="text-[8px] sm:text-[10px] font-bold mt-1 text-center leading-tight truncate w-full px-1 text-gray-700">${itemStr || ''}</span>
-                    </div>`;
+                    let innerHTML = `<div class="cell-num">${boxNum}</div>`;
+                    if(item) {
+                        innerHTML += `<div class="cell-emoji">${item.emoji}</div><div class="cell-text">${item.name}</div>`;
+                    }
+                    innerHTML += `<div class="pion-container" id="pions-${boxNum}"></div>`;
+                    
+                    cellDiv.innerHTML = innerHTML;
+                    boardEl.appendChild(cellDiv);
                 }
             }
-            document.getElementById('board').innerHTML = boardHTML;
         }
 
-        function updateTurnUI() {
-            let pName = players[currentPlayerIndex].name;
-            let pBg = avatars[currentPlayerIndex].bg;
-            let pText = avatars[currentPlayerIndex].text;
+        function updateUI() {
+            let p = players[currentPlayerIdx];
+            let ava = avatars[currentPlayerIdx];
             
-            let turnIndicator = document.getElementById('turn-indicator');
-            turnIndicator.innerHTML = `${dict[selectedLang].turn}: <span class="${pBg} ${pText} px-3 py-1 rounded-xl ml-2 shadow-md flex items-center gap-1">${pName} ${avatars[currentPlayerIndex].emoji}</span>`;
+            document.getElementById('active-name').innerText = p.name;
+            document.getElementById('active-name').className = `text-2xl heading-font truncate max-w-[120px] ${ava.text}`;
             
-            let currentRound = turnsPlayed[currentPlayerIndex] + 1;
-            if(currentRound > MAX_TURNS) currentRound = MAX_TURNS;
-            document.getElementById('turn-count').innerText = currentRound;
+            let avaEl = document.getElementById('active-avatar');
+            avaEl.innerText = ava.emoji;
+            avaEl.className = `w-14 h-14 rounded-full border-4 shadow-sm flex items-center justify-center text-3xl text-white ${ava.bg} ${ava.border}`;
             
-            let btnRoll = document.getElementById('btn-roll');
-            btnRoll.disabled = false;
-            btnRoll.classList.remove('opacity-50', 'cursor-not-allowed');
+            let currentDisplayRound = Math.min(p.rounds + 1, MAX_ROUNDS);
+            document.getElementById('val-round').innerText = currentDisplayRound;
+
+            renderBag('bag-desktop');
+            renderBag('bag-mobile');
         }
 
-        // 4. Proses Kocok Dadu
-        function rollDice() {
-            if(turnsPlayed[currentPlayerIndex] >= MAX_TURNS) return;
-            
-            let btnRoll = document.getElementById('btn-roll');
-            btnRoll.disabled = true;
-            btnRoll.classList.add('opacity-50', 'cursor-not-allowed');
-            
-            let diceEl = document.getElementById('dice');
-            let rolls = 0;
-            
-            speak(dict[selectedLang].roll_audio);
-            
-            let interval = setInterval(() => {
-                diceEl.innerText = Math.floor(Math.random() * 6) + 1;
-                diceEl.style.transform = `rotate(${Math.random() * 360}deg)`;
-                rolls++;
-                if (rolls > 12) {
-                    clearInterval(interval);
-                    let finalDice = Math.floor(Math.random() * 6) + 1;
-                    diceEl.innerText = finalDice;
-                    diceEl.style.transform = `rotate(0deg)`;
-                    
-                    // Sebutkan angka dadu yang keluar
-                    speak(speakNumber(finalDice, selectedLang));
-                    
-                    setTimeout(() => {
-                        movePlayer(finalDice);
-                    }, 1200);
-                }
-            }, 80);
-        }
+        function renderBag(containerId) {
+            let container = document.getElementById(containerId);
+            if(!container) return;
+            container.innerHTML = '';
 
-        // 5. Pergerakan Pion dan Ambil Gambar
-        function movePlayer(dice) {
-            let newPos = playerPositions[currentPlayerIndex] + dice;
-            if (newPos > 36) newPos = 36;
-            playerPositions[currentPlayerIndex] = newPos;
-            
-            // Pindahkan elemen pion ke dalam kotak grid
-            let box = document.getElementById(`box-${newPos}`);
-            let pionEl = document.getElementById(`pion-${currentPlayerIndex}`);
-            if(box) {
-                box.appendChild(pionEl);
-            }
-            
-            // Audio Kotak Tujuan
-            setTimeout(() => {
-                let numText = speakNumber(newPos, selectedLang);
-                let isTempEmpty = emptyBoxes.includes(newPos);
-                
-                if (isTempEmpty) {
-                    speak(`${dict[selectedLang].empty_box} ${numText}`);
-                } else {
-                    let item = boardMap[newPos];
-                    speak(`${numText}. ${item}`);
-                    playerItems[currentPlayerIndex].push(item);
-                }
-                
-                // Jeda sebelum pergantian pemain
-                setTimeout(() => {
-                    turnsPlayed[currentPlayerIndex]++;
-                    
-                    if(turnsPlayed.every(t => t >= MAX_TURNS)) {
-                        endGame();
-                    } else {
-                        currentPlayerIndex = (currentPlayerIndex + 1) % 4;
-                        updateTurnUI();
-                        speak(dict[selectedLang].turn_audio + " " + players[currentPlayerIndex].name);
-                    }
-                }, 3500); 
-            }, 1000);
-        }
+            players.forEach((p, idx) => {
+                let ava = avatars[idx];
+                let isActive = (idx === currentPlayerIdx);
+                let activeStyle = isActive ? `border-2 ${ava.border} bg-white shadow-md` : `border-2 border-transparent bg-gray-50 opacity-70`;
 
-        // 6. Akhir Permainan (Sesi Nyarita)
-        function endGame() {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('flex');
-            document.getElementById('result-screen').classList.remove('hidden');
-            
-            document.getElementById('story-title').innerText = dict[selectedLang].story_time_title;
-            document.getElementById('story-desc').innerText = dict[selectedLang].story_desc;
-            speak(dict[selectedLang].story_time_audio);
-            
-            let resultGrid = document.getElementById('result-grid');
-            resultGrid.innerHTML = "";
-            
-            for(let i=0; i<4; i++) {
-                let pName = players[i].name;
-                let items = playerItems[i];
-                let pBg = avatars[i].bg;
-                let pText = avatars[i].text;
-                let pBorder = avatars[i].border;
-                
-                let itemsHTML = items.map(item => `
-                    <div class="bg-white p-3 rounded-2xl text-center shadow-sm border-2 border-gray-100 flex flex-col items-center justify-center">
-                        <div class="text-4xl sm:text-5xl mb-2">${getEmoji(item)}</div>
-                        <div class="font-bold text-sm sm:text-base text-gray-800">${item}</div>
-                    </div>
-                `).join('');
-                
-                if(items.length === 0) {
-                     itemsHTML = `<div class="col-span-3 text-gray-500 italic text-sm py-4">Kosong (Hanya mendarat di kotak angka)</div>`;
-                }
-                
-                resultGrid.innerHTML += `
-                    <div class="bg-gray-50 p-5 rounded-3xl shadow-md border-l-8 ${pBorder}">
-                        <h3 class="text-xl font-bold mb-4 ${pBg} ${pText} inline-block px-5 py-2 rounded-full shadow-sm">
-                            ${pName} ${avatars[i].emoji}
-                        </h3>
-                        <div class="grid grid-cols-3 gap-3 justify-center">
-                            ${itemsHTML}
+                let itemsHtml = p.items.length > 0 
+                    ? p.items.map(i => `<span class="bg-gray-100 rounded px-1 py-0.5 text-sm md:text-base">${i.emoji}</span>`).join('')
+                    : `<span class="text-xs text-gray-400 italic">Kosong</span>`;
+
+                container.innerHTML += `
+                    <div class="p-2 rounded-xl flex flex-col gap-1 transition-all ${activeStyle}">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full ${ava.bg} flex items-center justify-center text-[10px] border border-white text-white">${ava.emoji}</div>
+                            <span class="font-bold text-sm ${ava.text} truncate">${p.name}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1 min-h-[24px] items-center">
+                            ${itemsHtml}
                         </div>
                     </div>
                 `;
+            });
+        }
+
+        function rollDice() {
+            if(isAnimating) return;
+            let p = players[currentPlayerIdx];
+            if(p.rounds >= MAX_ROUNDS) return;
+
+            isAnimating = true;
+            let btn = document.getElementById('btn-roll');
+            let dice = document.getElementById('dice');
+            
+            btn.classList.add('opacity-50', 'pointer-events-none');
+            dice.classList.add('dice-shake', 'bg-amber-50', 'text-amber-500', 'border-amber-300');
+            
+            speak(dict[currentLang].audio_roll);
+
+            let ticks = 0;
+            let interval = setInterval(() => {
+                dice.innerText = Math.floor(Math.random() * 6) + 1;
+                ticks++;
+                if(ticks > 12) {
+                    clearInterval(interval);
+                    let finalVal = Math.floor(Math.random() * 6) + 1;
+                    dice.innerText = finalVal;
+                    dice.classList.remove('dice-shake', 'bg-amber-50', 'border-amber-300');
+                    
+                    setTimeout(() => movePion(finalVal), 500);
+                }
+            }, 60);
+        }
+
+        function movePion(steps) {
+            let p = players[currentPlayerIdx];
+            let targetPos = p.pos + steps;
+            if (targetPos > TOTAL_BOXES) targetPos = TOTAL_BOXES;
+            
+            p.pos = targetPos;
+            
+            // Render ulang semua pion di papan
+            for(let i=1; i<=TOTAL_BOXES; i++) {
+                document.getElementById(`pions-${i}`).innerHTML = '';
+            }
+
+            players.forEach((player, idx) => {
+                if(player.pos > 0) {
+                    let ava = avatars[idx];
+                    let pCont = document.getElementById(`pions-${player.pos}`);
+                    if(pCont) {
+                        let pionEl = document.createElement('div');
+                        pionEl.className = `pion ${ava.bg} text-white ${ava.border}`;
+                        pionEl.innerText = ava.emoji;
+                        pCont.appendChild(pionEl);
+                    }
+                }
+            });
+
+            // Tampilkan Modal setelah pion pindah
+            setTimeout(() => {
+                showModal(targetPos);
+            }, 800);
+        }
+
+        function showModal(boxNum) {
+            let item = boardData[boxNum];
+            pendingLandedItem = item;
+
+            document.getElementById('modal-box-num').innerText = boxNum;
+
+            let divHasItem = document.getElementById('modal-content-hasitem');
+            let divEmpty = document.getElementById('modal-content-empty');
+
+            if(item) {
+                divHasItem.classList.remove('hidden');
+                divEmpty.classList.add('hidden');
+                document.getElementById('modal-emoji').innerText = item.emoji;
+                document.getElementById('modal-word').innerText = item.name;
+                
+                // Audio HANYA menyuruh anak menyebutkan, tidak menyebutkan namanya
+                speak(dict[currentLang].audio_prompt_item);
+            } else {
+                divHasItem.classList.add('hidden');
+                divEmpty.classList.remove('hidden');
+                
+                // Audio menyuruh menyebutkan angka
+                speak(dict[currentLang].audio_prompt_empty);
+            }
+
+            document.getElementById('modal-interaction').classList.remove('hidden');
+        }
+
+        function closeModalAndContinue() {
+            let p = players[currentPlayerIdx];
+            
+            // Simpan gambar jika ada
+            if(pendingLandedItem) {
+                p.items.push(pendingLandedItem);
+            }
+            
+            p.rounds++;
+            pendingLandedItem = null;
+
+            document.getElementById('modal-interaction').classList.add('hidden');
+            
+            let btn = document.getElementById('btn-roll');
+            btn.classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('dice').innerText = '🎲';
+            document.getElementById('dice').classList.remove('text-amber-500');
+            
+            checkGameStatus();
+        }
+
+        function checkGameStatus() {
+            let allFinished = players.every(p => p.rounds >= MAX_ROUNDS);
+            
+            if(allFinished) {
+                showResultScreen();
+            } else {
+                currentPlayerIdx = (currentPlayerIdx + 1) % 4;
+                updateUI();
+                isAnimating = false;
             }
         }
-        
-        // Membantu interaksi awal audio
-        document.body.addEventListener('click', function() {
-            if (speechSynth.state === 'suspended') {
-                speechSynth.resume();
-            }
-        }, { once: true });
+
+        function showResultScreen() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('flex');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('screen-result').classList.add('flex');
+            
+            speak(dict[currentLang].audio_end);
+
+            let grid = document.getElementById('result-grid');
+            grid.innerHTML = '';
+
+            players.forEach((p, idx) => {
+                let ava = avatars[idx];
+                
+                let itemsHtml = p.items.length > 0
+                    ? p.items.map(item => `
+                        <div class="bg-white border-2 border-gray-100 rounded-2xl w-[70px] flex flex-col items-center p-2 shadow-sm">
+                            <span class="text-3xl mb-1">${item.emoji}</span>
+                            <span class="text-[10px] font-bold text-gray-600 truncate w-full text-center capitalize">${item.name}</span>
+                        </div>
+                    `).join('')
+                    : `<div class="text-gray-400 italic font-bold p-4 text-center w-full text-sm">Teu aya gambar / Kosong</div>`;
+
+                grid.innerHTML += `
+                    <div class="bg-gray-50 rounded-[2rem] p-5 border-l-8 ${ava.border} shadow-xl text-left pop-in">
+                        <div class="flex items-center gap-3 mb-3 border-b-2 border-gray-200 pb-2">
+                            <div class="w-12 h-12 rounded-full ${ava.bg} border-2 border-white shadow-md flex items-center justify-center text-2xl text-white">${ava.emoji}</div>
+                            <h3 class="text-xl heading-font ${ava.text}">${p.name}</h3>
+                        </div>
+                        <div class="bg-white/80 rounded-2xl p-3 border border-gray-100">
+                            <div class="flex gap-2 flex-wrap justify-center min-h-[80px] items-center">
+                                ${itemsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
     </script>
 </body>
 </html>
